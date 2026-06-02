@@ -23,10 +23,6 @@ def create_expense(
     return expense
 
 
-def list_user_expenses(db: Session, user_id: int) -> list[Expense]:
-    return list_user_expenses_filtered(db, user_id)
-
-
 def list_user_expenses_filtered(
     db: Session,
     user_id: int,
@@ -87,6 +83,20 @@ def get_user_expense(
         )
         .first()
     )
+
+
+def get_user_expense_or_404(
+    db: Session,
+    user_id: int,
+    expense_id: int
+) -> Expense:
+    expense = get_user_expense(db, user_id, expense_id)
+    if expense is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Expense not found"
+        )
+    return expense
 
 
 def update_user_expense(

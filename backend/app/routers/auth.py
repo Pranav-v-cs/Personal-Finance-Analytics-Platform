@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -20,6 +20,14 @@ router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+
+def _invalid_credentials_exception() -> HTTPException:
+    return HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid email or password",
+        headers={"WWW-Authenticate": "Bearer"}
+    )
 
 @router.get(
     "/me",
@@ -43,7 +51,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     if existing_user:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_409_CONFLICT,
             detail="Email already registered"
         )
     
@@ -78,19 +86,13 @@ def login_user(
     )
     
     if not user:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
+        raise _invalid_credentials_exception()
     
     if not verify_password(
         user_data.password,
         user.hashed_password
     ):
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid email or password"
-        )
+        raise _invalid_credentials_exception()
     
     access_token = create_access_token(
         {"sub": str(user.id)}
