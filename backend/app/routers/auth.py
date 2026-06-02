@@ -3,13 +3,32 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.user import UserCreate, UserResponse
-from app.core.security import hash_password
+from app.schemas.user import (
+    UserCreate,
+    UserResponse,
+    UserLogin,
+    Token
+)
+from app.core.security import (
+    hash_password,
+    verify_password,
+    create_access_token
+)
+from app.services.auth_service import get_current_user
 
 router = APIRouter(
     prefix="/auth",
     tags=["Authentication"]
 )
+
+@router.get(
+    "/me",
+    response_model=UserResponse
+)
+def get_me(
+    current_user: User = Depends(get_current_user)
+):
+    return current_user
 
 @router.post(
     "/register",
@@ -43,3 +62,41 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@router.post(
+    "/login",
+    response_model=Token
+)
+def login_user(
+    user_data: UserLogin,
+    db: Session = Depends(get_db)
+):
+    user = (
+        db.query(User)
+        .filter(User.email == user_data.email)
+        .first()
+    )
+    
+    if not user:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    if not verify_password(
+        user_data.password,
+        user.hashed_password
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password"
+        )
+    
+    access_token = create_access_token(
+        {"sub": str(user.id)}
+    )
+
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }
