@@ -1,4 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from datetime import date
+from decimal import Decimal
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
@@ -9,7 +12,7 @@ from app.services.expense_service import (
     create_expense,
     delete_user_expense,
     get_user_expense,
-    list_user_expenses,
+    list_user_expenses_filtered,
     update_user_expense
 )
 
@@ -37,10 +40,23 @@ def create_expense_route(
     response_model=list[ExpenseResponse]
 )
 def list_expenses_route(
+    category: str | None = Query(default=None, min_length=1, max_length=100),
+    start_date: date | None = Query(default=None),
+    end_date: date | None = Query(default=None),
+    min_amount: Decimal | None = Query(default=None, gt=0),
+    max_amount: Decimal | None = Query(default=None, gt=0),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    return list_user_expenses(db, current_user.id)
+    return list_user_expenses_filtered(
+        db=db,
+        user_id=current_user.id,
+        category=category,
+        start_date=start_date,
+        end_date=end_date,
+        min_amount=min_amount,
+        max_amount=max_amount
+    )
 
 
 @router.get(
