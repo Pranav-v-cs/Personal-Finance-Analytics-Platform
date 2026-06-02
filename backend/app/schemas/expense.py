@@ -10,6 +10,8 @@ class ExpenseBase(BaseModel):
     description: str | None = Field(default=None, max_length=255)
     transaction_date: datetime | None = None
 
+    model_config = ConfigDict(extra="forbid")
+
 
 class ExpenseCreate(ExpenseBase):
     pass
@@ -20,6 +22,8 @@ class ExpenseUpdate(BaseModel):
     category: str | None = Field(default=None, min_length=1, max_length=100)
     description: str | None = Field(default=None, max_length=255)
     transaction_date: datetime | None = None
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class ExpenseResponse(ExpenseBase):

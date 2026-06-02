@@ -1,17 +1,18 @@
 from datetime import date
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
+from app.schemas.common import MessageResponse
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseUpdate
 from app.services.auth_service import get_current_user
 from app.services.expense_service import (
     create_expense,
     delete_user_expense,
-    get_user_expense,
+    get_user_expense_or_404,
     list_user_expenses_filtered,
     update_user_expense
 )
@@ -68,13 +69,7 @@ def get_expense_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    expense = get_user_expense(db, current_user.id, expense_id)
-    if expense is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Expense not found"
-        )
-    return expense
+    return get_user_expense_or_404(db, current_user.id, expense_id)
 
 
 @router.put(
@@ -87,28 +82,19 @@ def update_expense_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    expense = get_user_expense(db, current_user.id, expense_id)
-    if expense is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Expense not found"
-        )
+    expense = get_user_expense_or_404(db, current_user.id, expense_id)
     return update_user_expense(db, expense, expense_data)
 
 
 @router.delete(
     "/{expense_id}",
-    status_code=status.HTTP_204_NO_CONTENT
+    response_model=MessageResponse
 )
 def delete_expense_route(
     expense_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    expense = get_user_expense(db, current_user.id, expense_id)
-    if expense is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Expense not found"
-        )
+    expense = get_user_expense_or_404(db, current_user.id, expense_id)
     delete_user_expense(db, expense)
+    return {"message": "Expense deleted"}
