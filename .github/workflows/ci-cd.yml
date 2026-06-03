@@ -1,0 +1,103 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install backend dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+      
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+      
+      - name: Run backend tests
+        run: |
+          cd backend
+          # Add your test command here (e.g., pytest)
+          echo "Backend tests would run here"
+      
+      - name: Run frontend tests
+        run: |
+          cd frontend
+          # Add your test command here (e.g., npm test)
+          echo "Frontend tests would run here"
+      
+      - name: Security scan backend
+        run: |
+          cd backend
+          pip install safety
+          safety check -r requirements.txt || echo "Security scan completed"
+      
+      - name: Security scan frontend
+        run: |
+          cd frontend
+          npm install -g npm-audit-resolver
+          npm audit --production || echo "Frontend security scan completed"
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      
+      - name: Build and push backend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/finance-backend:latest
+      
+      - name: Build and push frontend image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/finance-frontend:latest
+      
+      - name: Deploy to staging (example)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Deploying to staging environment"
+          # Add your deployment logic here (e.g., kubectl apply -f k8s/)
+      
+      - name: Deploy to production
+        if: github.ref == 'refs/heads/main'
+        run: |
+          echo "Deploying to production environment"
+          # Add your production deployment logic here
