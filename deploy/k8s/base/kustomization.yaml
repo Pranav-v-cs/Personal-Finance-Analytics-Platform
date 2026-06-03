@@ -1,0 +1,7 @@
+resources:
+  - namespace.yaml
+  - backend-deployment.yaml
+  - frontend-deployment.yaml
+  - postgres-deployment.yaml
+  - postgres-pvc.yaml
+  - ingress.yaml
