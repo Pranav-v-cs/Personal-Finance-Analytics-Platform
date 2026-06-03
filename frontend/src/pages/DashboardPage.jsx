@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useDashboard } from '../hooks/useDashboard'
 import { useRouter } from '../hooks/useRouter'
+import QuickAdd from '../components/QuickAdd'
 
 function DashboardSkeleton() {
   return (
@@ -59,6 +60,7 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-stack">
+      <QuickAdd isMobile={true} className="mb-6" />
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial snapshot"

@@ -10,6 +10,7 @@ import { Input, Select, Textarea } from '../components/ui/Input'
 import { adaptExpense } from '../utils/expense'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useExpenses } from '../hooks/useExpenses'
+import QuickAdd from '../components/QuickAdd'
 
 const emptyForm = {
   title: '',
@@ -92,18 +93,20 @@ export default function ExpensesPage() {
     )
   }
 
-  return (
-    <div className="expenses-layout">
-      <PageHeader
-        eyebrow="Expenses"
-        title="Track, filter, and edit expenses"
-        description="Use the filters to narrow the list, or keep a working form open while you review recent items."
-        actions={<Badge tone="default">{visibleExpenses.length} items</Badge>}
-      />
+    return (
+      <div className="expenses-layout">
+        <PageHeader
+          eyebrow="Expenses"
+          title="Track, filter, and edit expenses"
+          description="Use the filters to narrow the list, or keep a working form open while you review recent items."
+          actions={<Badge tone="default">{visibleExpenses.length} items</Badge>}
+        />
 
-      <InlineError message={error} />
+        <InlineError message={error} />
 
-      <div className="expenses-grid">
+        <div className="expenses-grid">
+          <QuickAdd isMobile={false} />
+
         <Card className="expenses-panel">
           <div className="panel-heading">
             <div>
