@@ -4,13 +4,17 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.database.models import User
 from app.schemas.dashboard import (
+    DashboardCategoryResponse,
     DashboardSummaryResponse,
-    MonthlySpendingResponse
+    MonthlySpendingResponse,
+    DashboardRecentResponse
 )
 from app.services.auth_service import get_current_user
 from app.services.dashboard_service import (
     get_dashboard_summary,
-    get_monthly_spending
+    get_monthly_spending,
+    get_dashboard_categories,
+    get_dashboard_recent
 )
 
 router = APIRouter(
@@ -39,3 +43,25 @@ def dashboard_monthly_route(
     current_user: User = Depends(get_current_user)
 ):
     return get_monthly_spending(db, current_user.id)
+
+
+@router.get(
+    "/categories",
+    response_model=list[DashboardCategoryResponse]
+)
+def dashboard_categories_route(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_dashboard_categories(db, current_user.id)
+
+
+@router.get(
+    "/recent",
+    response_model=list[DashboardRecentResponse]
+)
+def dashboard_recent_route(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    return get_dashboard_recent(db, current_user.id)
