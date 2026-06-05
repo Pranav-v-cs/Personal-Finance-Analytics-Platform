@@ -10,6 +10,8 @@ import { Input, Select } from '../components/ui/Input'
 import { Label } from '../components/ui/Label'
 import { Separator } from '../components/ui/Separator'
 import { useBudgets } from '../hooks/useBudgets'
+import { useDashboardLayout } from '../hooks/useDashboardLayout'
+import { useAIExplain } from '../hooks/useAIExplain'
 import { formatCurrency } from '../utils/format'
 import { listCategories } from '../services/categoryService'
 
@@ -33,7 +35,7 @@ function getBudgetStatus(pct) {
   return { label: 'Healthy', tone: 'success', health: 'healthy' }
 }
 
-function BudgetCard({ budget, onEdit, onDelete }) {
+function BudgetCard({ budget, onEdit, onDelete, onExplain, explaining, isExplaining }) {
   const current = Number(budget.current_spend || 0)
   const limit = Number(budget.monthly_limit)
   const pct = limit > 0 ? Math.min((current / limit) * 100, 100) : 0
@@ -49,10 +51,18 @@ function BudgetCard({ budget, onEdit, onDelete }) {
             <Badge variant={status.tone}>{status.label}</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onExplain(budget)} disabled={isExplaining}>
+              {isExplaining ? '...' : 'Explain'}
+            </Button>
             <Button variant="ghost" size="sm" onClick={() => onEdit(budget)}>Edit</Button>
             <Button variant="danger" size="sm" onClick={() => onDelete(budget)}>Delete</Button>
           </div>
         </div>
+        {explaining && (
+          <div className="mt-2 pt-2 border-t border-[var(--border)]">
+            <p className="text-xs leading-relaxed whitespace-pre-wrap text-[var(--muted)]">{explaining}</p>
+          </div>
+        )}
       </CardHeader>
 
       <CardContent>
@@ -336,6 +346,13 @@ function getCategoryStrings(categories) {
 
 export default function BudgetsPage() {
   const { budgets, goals, loading, error, refreshBudgets, createBudget, updateBudget, deleteBudget, createGoal, updateGoal, deleteGoal, budgetStats } = useBudgets()
+  const { aiProvider } = useDashboardLayout()
+  const data = useMemo(() => ({ summary: { totalExpenses: 0 }, budgets, goals }), [budgets, goals])
+  const {
+    explanation, explaining, explainError,
+    explainBudget, clearExplanation,
+  } = useAIExplain(data, aiProvider)
+  const [explainingBudgetId, setExplainingBudgetId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [categories, setCategories] = useState([])
@@ -517,8 +534,16 @@ export default function BudgetsPage() {
             </CardContent>
           </Card>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {budgets.map((budget) => (
-              <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete} />
+              {budgets.map((budget) => (
+              <BudgetCard
+                key={budget.id}
+                budget={budget}
+                onEdit={setEditing}
+                onDelete={handleDelete}
+                onExplain={(b) => { clearExplanation(); setExplainingBudgetId(b.id); explainBudget(b) }}
+                explaining={explainingBudgetId === budget.id ? explanation : null}
+                isExplaining={explaining && explainingBudgetId === budget.id}
+              />
             ))}
           </div>
         </>

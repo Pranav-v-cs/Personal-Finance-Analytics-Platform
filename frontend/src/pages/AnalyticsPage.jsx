@@ -1,11 +1,14 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card'
 import { PageContainer } from '../components/layout/PageContainer'
 import { PageHeader } from '../components/common/PageHeader'
 import { Badge } from '../components/ui/Badge'
+import { Button } from '../components/ui/Button'
 import { InlineError } from '../components/common/InlineError'
 import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
 import { useAnalytics } from '../hooks/useAnalytics'
+import { useDashboardLayout } from '../hooks/useDashboardLayout'
+import { useAIExplain } from '../hooks/useAIExplain'
 import { formatCurrency, formatDate, formatMonthLabel } from '../utils/format'
 import ChartTrend from '../components/common/ChartTrend'
 import ChartDonut from '../components/common/ChartDonut'
@@ -60,6 +63,18 @@ export default function AnalyticsPage() {
     loading, error,
     trendNarrative, categoryTrends, forecast, categoryInsights, anomalyInsights,
   } = useAnalytics()
+  const { aiProvider } = useDashboardLayout()
+
+  const data = useMemo(() => ({ summary, monthly, categories, analytics, forecast, categoryTrends, categoryInsights, anomalyInsights }), [
+    summary, monthly, categories, analytics, forecast, categoryTrends, categoryInsights, anomalyInsights,
+  ])
+
+  const {
+    explanation, explaining, explainError,
+    explainForecast, explainAnomaly, clearExplanation,
+  } = useAIExplain(data, aiProvider)
+
+  const [explainingId, setExplainingId] = useState(null)
 
   const validMonthly = useMemo(() => monthly.filter((m) => m.total > 0), [monthly])
 
@@ -316,6 +331,9 @@ export default function AnalyticsPage() {
                   Based on {forecast.daysElapsed} day{forecast.daysElapsed !== 1 ? 's' : ''} of data
                 </p>
               </div>
+              <Button variant="ghost" size="sm" onClick={() => { clearExplanation(); setExplainingId('forecast'); explainForecast(forecast) }} disabled={explaining && explainingId === 'forecast'}>
+                {explaining && explainingId === 'forecast' ? 'Explaining...' : 'Explain'}
+              </Button>
             </CardHeader>
             <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
@@ -347,6 +365,13 @@ export default function AnalyticsPage() {
                     : 'You are on track to match last month\'s spending.'}
               </p>
             </CardFooter>
+            {explanation && explainingId === 'forecast' && (
+              <CardContent className="border-t border-[var(--border)]">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap text-[var(--muted)]">{explanation}</p>
+                <Button variant="ghost" size="sm" className="mt-2" onClick={() => { clearExplanation(); setExplainingId(null) }}>Clear</Button>
+              </CardContent>
+            )}
+            {explainError && explainingId === 'forecast' && <CardContent><InlineError message={explainError} /></CardContent>}
           </Card>
         ) : (
           <Card>
@@ -378,11 +403,22 @@ export default function AnalyticsPage() {
                         <span>·</span>
                         <span>{formatDate(txn.date)}</span>
                       </div>
-                      <div className="text-xs text-[var(--accent)] font-semibold mt-1">
-                        {avgExpense > 0
-                          ? `${Math.round(txn.amount / avgExpense)}x your average expense`
-                          : `z-score: ${txn.z_score}`}
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-[var(--accent)] font-semibold">
+                          {avgExpense > 0
+                            ? `${Math.round(txn.amount / avgExpense)}x your average expense`
+                            : `z-score: ${txn.z_score}`}
+                        </span>
+                        <Button variant="ghost" size="sm" className="text-xs h-auto py-0.5" onClick={() => { clearExplanation(); setExplainingId(`anomaly-${txn.id}`); explainAnomaly(txn, avgExpense) }} disabled={explaining && explainingId === `anomaly-${txn.id}`}>
+                          {explaining && explainingId === `anomaly-${txn.id}` ? 'Explaining...' : 'Explain'}
+                        </Button>
                       </div>
+                      {explanation && explainingId === `anomaly-${txn.id}` && (
+                        <div className="mt-2 pt-2 border-t border-[var(--border)]">
+                          <p className="text-xs leading-relaxed whitespace-pre-wrap text-[var(--muted)]">{explanation}</p>
+                        </div>
+                      )}
+                      {explainError && explainingId === `anomaly-${txn.id}` && <div className="mt-2"><InlineError message={explainError} /></div>}
                     </CardContent>
                   </Card>
                 ))}
