@@ -26,3 +26,11 @@ export async function getRecentExpenses() {
 export async function getDashboardCategories() {
   return api.get('/dashboard/categories')
 }
+
+export async function getCategoryMonthly() {
+  return api.get('/dashboard/category-monthly')
+}
+
+export async function getDashboardAnalytics() {
+  return api.get('/dashboard/analytics')
+}

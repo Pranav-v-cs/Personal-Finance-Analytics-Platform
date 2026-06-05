@@ -42,3 +42,42 @@ class DashboardRecentResponse(BaseModel):
     amount: Decimal
     category: str
     date: str
+
+
+class CategoryMonthlyResponse(BaseModel):
+    month: str
+    category: str
+    total_amount: Decimal
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class WeekdayAggregate(BaseModel):
+    day: int
+    total: float
+    count: int
+    avg: float
+
+
+class AnomalyCandidate(BaseModel):
+    id: int
+    title: str
+    amount: float
+    category: str
+    date: str
+    z_score: float
+
+
+class LargestTransaction(BaseModel):
+    id: int
+    title: str
+    amount: float
+    category: str
+    date: str
+
+
+class AnalyticsResponse(BaseModel):
+    weekly_metrics: list[dict]
+    weekday_aggregates: list[WeekdayAggregate]
+    anomaly_candidates: list[AnomalyCandidate]
+    largest_transactions: list[LargestTransaction]

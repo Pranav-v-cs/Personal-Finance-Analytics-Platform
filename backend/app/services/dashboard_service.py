@@ -141,3 +141,123 @@ def get_dashboard_recent(db: Session, user_id: int) -> list[dict]:
         }
         for expense in recent_rows
     ]
+
+
+def get_category_monthly(db: Session, user_id: int) -> list[dict]:
+    rows = (
+        db.query(
+            func.strftime("%Y-%m", Expense.transaction_date),
+            Expense.category,
+            func.coalesce(func.sum(Expense.amount), 0),
+        )
+        .filter(Expense.user_id == user_id)
+        .group_by(func.strftime("%Y-%m", Expense.transaction_date), Expense.category)
+        .order_by(func.strftime("%Y-%m", Expense.transaction_date).asc(), Expense.category.asc())
+        .all()
+    )
+
+    return [
+        {
+            "month": month,
+            "category": category,
+            "total_amount": total,
+        }
+        for month, category, total in rows
+        if month is not None
+    ]
+
+
+def get_analytics(db: Session, user_id: int) -> dict:
+    expenses = (
+        db.query(Expense)
+        .filter(Expense.user_id == user_id)
+        .all()
+    )
+
+    if not expenses:
+        return {
+            "weekly_metrics": [],
+            "weekday_aggregates": [],
+            "anomaly_candidates": [],
+        }
+
+    amounts = [float(e.amount) for e in expenses]
+    mean = sum(amounts) / len(amounts)
+    variance = sum((x - mean) ** 2 for x in amounts) / len(amounts)
+    std_dev = variance ** 0.5
+
+    anomaly_candidates = sorted(
+        [
+            {
+                "id": e.id,
+                "title": (e.description or "Expense").splitlines()[0].strip() or "Expense",
+                "amount": float(e.amount),
+                "category": e.category,
+                "date": e.transaction_date.isoformat() if e.transaction_date else "",
+                "z_score": round((float(e.amount) - mean) / std_dev, 2) if std_dev > 0 else 0,
+            }
+            for e in expenses
+        ],
+        key=lambda x: abs(x["z_score"]),
+        reverse=True,
+    )
+
+    weekday_data: dict[int, dict] = {}
+    for e in expenses:
+        if e.transaction_date:
+            day = e.transaction_date.weekday()
+            if day not in weekday_data:
+                weekday_data[day] = {"total": 0.0, "count": 0}
+            weekday_data[day]["total"] += float(e.amount)
+            weekday_data[day]["count"] += 1
+
+    weekday_aggregates = [
+        {
+            "day": day,
+            "total": round(data["total"], 2),
+            "count": data["count"],
+            "avg": round(data["total"] / data["count"], 2),
+        }
+        for day, data in sorted(weekday_data.items())
+    ]
+
+    weekly: dict[str, dict] = {}
+    for e in expenses:
+        if e.transaction_date:
+            iso = e.transaction_date.isocalendar()
+            key = f"{iso[0]}-W{iso[1]:02d}"
+            if key not in weekly:
+                weekly[key] = {"total": 0.0, "count": 0}
+            weekly[key]["total"] += float(e.amount)
+            weekly[key]["count"] += 1
+
+    weekly_metrics = [
+        {
+            "week": week,
+            "total": round(data["total"], 2),
+            "count": data["count"],
+        }
+        for week, data in sorted(weekly.items())
+    ][-24:]
+
+    largest_transactions = sorted(
+        [
+            {
+                "id": e.id,
+                "title": (e.description or "Expense").splitlines()[0].strip() or "Expense",
+                "amount": float(e.amount),
+                "category": e.category,
+                "date": e.transaction_date.isoformat() if e.transaction_date else "",
+            }
+            for e in expenses
+        ],
+        key=lambda x: x["amount"],
+        reverse=True,
+    )[:5]
+
+    return {
+        "weekly_metrics": weekly_metrics,
+        "weekday_aggregates": weekday_aggregates,
+        "anomaly_candidates": anomaly_candidates[:10],
+        "largest_transactions": largest_transactions,
+    }
