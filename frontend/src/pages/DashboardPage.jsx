@@ -68,6 +68,17 @@ export default function DashboardPage() {
   const monthSeries = monthly.length ? monthly : []
   const hasExpenses = metrics.expenseCount > 0
 
+  const trendNarrative = (() => {
+    if (!monthly || monthly.length < 3) return ''
+    const amounts = monthly.slice(-3).map((m) => Number(m.total_amount ?? 0))
+    const [oldest, middle, newest] = amounts
+    if (newest > middle && middle > oldest) return 'Spending has increased steadily over the last 3 months.'
+    if (newest < middle && middle < oldest) return 'Spending has decreased steadily over the last 3 months.'
+    if (newest > oldest) return 'Spending is trending upward compared to 3 months ago, despite some fluctuation.'
+    if (newest < oldest) return 'Spending is trending downward compared to 3 months ago, despite some fluctuation.'
+    return ''
+  })()
+
   const handleQuickAdd = async (values) => {
     setQuickAddSaving(true)
     try {
@@ -195,28 +206,40 @@ export default function DashboardPage() {
                 </div>
               ) : null}
               <ChartBars data={monthSeries} />
+              {trendNarrative && (
+                <p className="trend-narrative">{trendNarrative}</p>
+              )}
             </Card>
 
             <Card className="dashboard-panel">
               <div className="panel-heading">
                 <div>
-                  <div className="eyebrow">Category mix</div>
+                  <div className="eyebrow">Category intelligence</div>
                   <h2>Where the money goes</h2>
                 </div>
               </div>
               {categories.length === 0 ? (
                 <p className="empty-inline">No categories yet.</p>
               ) : (
-                <div className="category-list">
-                  {categories.slice(0, 5).map((row) => (
-                    <div key={row.category} className="category-row">
-                      <div>
-                        <strong>{row.category}</strong>
-                        <span>{row.percent?.toFixed(0) || 0}% of spend</span>
+                <div className="category-rank">
+                  {categories.slice(0, 5).map((row, idx) => {
+                    const pct = row.percent?.toFixed(0) || 0
+                    return (
+                      <div key={row.category} className="category-rank-row">
+                        <span className="category-rank-num">{idx + 1}</span>
+                        <div className="category-rank-info">
+                          <div className="category-rank-header">
+                            <strong>{row.category}</strong>
+                            <span className="category-rank-amount">{formatCurrency(row.total_amount || row.total)}</span>
+                          </div>
+                          <div className="category-rank-bar-track">
+                            <div className="category-rank-bar-fill" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="category-rank-pct">{pct}% of spend</span>
+                        </div>
                       </div>
-                      <strong>{formatCurrency(row.total_amount || row.total)}</strong>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </Card>
