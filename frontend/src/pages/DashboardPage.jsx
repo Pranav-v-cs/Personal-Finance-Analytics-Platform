@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import {
   DndContext,
-  closestCenter,
+  closestCorners,
   PointerSensor,
   TouchSensor,
   useSensor,
@@ -11,7 +11,6 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
-import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
 import { DeltaBadge } from '../components/common/DeltaBadge'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
@@ -216,17 +215,17 @@ export default function DashboardPage() {
       ) : (
         <DndContext
           sensors={sensors}
-          collisionDetection={closestCenter}
+          collisionDetection={closestCorners}
           onDragEnd={(event) => {
             const { active, over } = event
-            if (active.id !== over.id) {
-              const zone = layout.zones && Object.entries(layout.zones).find(
-                ([, ids]) => ids.includes(active.id)
-              )?.[0]
-              if (zone) layout.reorder(zone, active.id, over.id)
+            if (!active || !over || active.id === over.id) return
+            const entries = Object.entries(layout.zones || {})
+            const activeZone = entries.find(([, ids]) => ids.includes(active.id))?.[0]
+            const overZone = entries.find(([, ids]) => ids.includes(over.id))?.[0]
+            if (activeZone && activeZone === overZone) {
+              layout.reorder(activeZone, active.id, over.id)
             }
           }}
-          modifiers={[restrictToVerticalAxis]}
         >
           <div className="bento-grid">
             <ZoneSection

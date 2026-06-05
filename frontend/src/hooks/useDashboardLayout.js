@@ -8,7 +8,14 @@ const DEFAULT_AI_PROVIDER = 'openai'
 function loadLayout() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (!parsed.zones) {
+        localStorage.removeItem(STORAGE_KEY)
+        return null
+      }
+      return parsed
+    }
   } catch {
     /* ignore */
   }
