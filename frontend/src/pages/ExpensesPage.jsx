@@ -4,13 +4,13 @@ import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
 import { PageHeader } from '../components/common/PageHeader'
 import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
+import { QuickAdd } from '../components/QuickAdd'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Input, Select, Textarea } from '../components/ui/Input'
 import { adaptExpense } from '../utils/expense'
 import { formatCurrency, formatDate } from '../utils/format'
 import { useExpenses } from '../hooks/useExpenses'
-import QuickAdd from '../components/QuickAdd'
 
 const emptyForm = {
   title: '',
@@ -104,10 +104,12 @@ export default function ExpensesPage() {
 
         <InlineError message={error} />
 
-        <div className="expenses-grid">
-          <QuickAdd isMobile={false} />
+        <Card className="expenses-panel quick-add-panel">
+          <QuickAdd categories={categories} onSubmit={createExpenseItem} saving={saving} />
+        </Card>
 
-        <Card className="expenses-panel">
+        <div className="expenses-grid">
+          <Card className="expenses-panel">
           <div className="panel-heading">
             <div>
               <div className="eyebrow">{editingId ? 'Edit expense' : 'New expense'}</div>
