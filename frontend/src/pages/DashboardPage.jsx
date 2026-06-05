@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   DndContext,
   closestCorners,
@@ -15,11 +15,11 @@ import { DeltaBadge } from '../components/common/DeltaBadge'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
 import { PageHeader } from '../components/common/PageHeader'
-import { SkeletonLine } from '../components/common/Skeleton'
+import { SkeletonLine } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
+import { PageContainer } from '../components/layout/PageContainer'
 import { formatCurrency } from '../utils/format'
-import { createExpense } from '../services/expenseService'
 import { useDashboard } from '../hooks/useDashboard'
 import { useFinancialHealth } from '../hooks/useFinancialHealth'
 import { useInsights } from '../hooks/useInsights'
@@ -37,7 +37,6 @@ import {
   WidgetCategoryIntelligence,
   WidgetBudgetSummary,
   WidgetGoalProgress,
-  WidgetQuickAddBlock,
   WidgetAIAssistant,
 } from '../components/dashboard/widgets'
 
@@ -49,7 +48,6 @@ const WIDGET_COMPONENTS = {
   'category-intelligence': WidgetCategoryIntelligence,
   'budget-summary': WidgetBudgetSummary,
   'goal-progress': WidgetGoalProgress,
-  'quick-add': WidgetQuickAddBlock,
   'ai-assistant': WidgetAIAssistant,
 }
 
@@ -69,8 +67,6 @@ function getWidgetProps(id, ctx) {
       return { budgets: ctx.budgets, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
     case 'goal-progress':
       return { goals: ctx.goals, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
-    case 'quick-add':
-      return { categories: ctx.categories, onSubmit: ctx.handleQuickAdd, saving: ctx.quickAddSaving }
     case 'ai-assistant':
       return {}
     default:
@@ -81,17 +77,17 @@ function getWidgetProps(id, ctx) {
 function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
   if (!widgetIds || widgetIds.length === 0) return null
 
-  const zoneClass = `bento-zone bento-zone-${zone}`
+  const isHero = zone === 'hero' || zone === 'utility'
 
   return (
-    <section className={zoneClass}>
+    <section className={`flex flex-col gap-3 ${isHero ? '' : ''}`}>
       {label && (
-        <div className="zone-label">
-          <h2 className="typo-section-title">{label}</h2>
+        <div>
+          <h2 className="text-lg font-extrabold tracking-tight">{label}</h2>
         </div>
       )}
       <SortableContext items={widgetIds} strategy={verticalListSortingStrategy}>
-        <div className="zone-widgets">
+        <div className={`flex flex-col gap-4 ${zone === 'insights' ? 'sm:grid sm:grid-cols-2' : ''} ${zone === 'analytics' ? 'sm:grid sm:grid-cols-2' : ''}`}>
           {widgetIds.map((widgetId) => {
             const Widget = WIDGET_COMPONENTS[widgetId]
             if (!Widget) return null
@@ -122,7 +118,6 @@ function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
 export default function DashboardPage() {
   const { summary, monthly, recent, categories, budgets, goals, loading, error, refresh } = useDashboard()
   const { navigate } = useRouter()
-  const [quickAddSaving, setQuickAddSaving] = useState(false)
   const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
   const health = useFinancialHealth({ summary, monthly, budgets, goals })
@@ -148,63 +143,52 @@ export default function DashboardPage() {
     return ''
   }, [monthly])
 
-  const handleQuickAdd = useCallback(async (values) => {
-    setQuickAddSaving(true)
-    try {
-      await createExpense(values)
-      refresh()
-    } catch {
-      /* Error feedback is handled by QuickAdd component */
-    } finally {
-      setQuickAddSaving(false)
-    }
-  }, [refresh])
-
   const sharedProps = useMemo(() => ({
     insights, metrics, health, monthSeries, trendNarrative,
-    categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate, formatCurrency,
-  }), [insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate])
+    categories, budgets, goals, navigate, formatCurrency,
+  }), [insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, navigate])
 
   if (loading) {
     return (
-      <div className="dashboard-stack">
+      <PageContainer>
         <PageHeader eyebrow="Dashboard" title="Your financial snapshot" description="Loading insights..." />
-        <div className="bento-loading">
+        <div className="flex flex-col gap-4">
           <WidgetSkeleton />
           <WidgetSkeleton />
           <WidgetSkeleton />
         </div>
-      </div>
+      </PageContainer>
     )
   }
 
   if (error) {
     return (
-      <div className="dashboard-stack">
+      <PageContainer>
         <PageHeader eyebrow="Dashboard" title="Your financial snapshot" description="A quick read on spending." />
         <InlineError message={error} />
-      </div>
+      </PageContainer>
     )
   }
 
   return (
-    <div className={`dashboard-stack density-${layout.density}`}>
+    <PageContainer>
+      <div className={`flex flex-col gap-12`}>
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial snapshot"
         description="Your financial health, key metrics, and spending trends."
         actions={
-          <div className="page-header-actions">
+          <>
             <Button variant="ghost" onClick={() => setDrawerOpen(true)}>
               Customize
             </Button>
             <Button onClick={() => navigate('/expenses')}>All transactions</Button>
-          </div>
+          </>
         }
       />
 
       {!hasExpenses ? (
-        <Card className="dashboard-panel">
+        <Card>
           <EmptyState
             title="Add your first expense to see your financial overview."
             description="Once you capture a few transactions, your health score, trends, and category mix will populate here."
@@ -227,7 +211,7 @@ export default function DashboardPage() {
             }
           }}
         >
-          <div className="bento-grid">
+          <div className="flex flex-col gap-12">
             <ZoneSection
               zone="hero"
               label=""
@@ -269,7 +253,7 @@ export default function DashboardPage() {
 
       <button
         type="button"
-        className="fab"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white text-2xl font-bold shadow-[0_6px_20px_rgba(124,116,232,0.4)] hover:bg-[var(--accentStrong)] active:scale-95 transition-all md:hidden"
         onClick={() => navigate('/expenses')}
         aria-label="Quick add expense"
       >
@@ -283,5 +267,6 @@ export default function DashboardPage() {
         data={{ hasBudgets: budgets.length > 0, hasGoals: goals.length > 0 }}
       />
     </div>
+    </PageContainer>
   )
 }

@@ -21,10 +21,10 @@ const protectedRoutes = new Set(['/dashboard', '/expenses', '/analytics', '/budg
 
 function FullScreenLoader() {
   return (
-    <div className="fullscreen-loader">
-      <div className="loader-card">
-        <div className="loader-orb" />
-        <p>Loading Pulse Finance</p>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--bg)]">
+      <div className="flex flex-col items-center gap-4">
+        <div className="h-8 w-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin" />
+        <p className="text-sm text-[var(--muted)]">Loading Pulse Finance</p>
       </div>
     </div>
   )
@@ -34,11 +34,11 @@ function NotFoundPage() {
   const { navigate } = useRouter()
 
   return (
-    <div className="not-found">
-      <Card className="not-found-card">
-        <div className="eyebrow">404</div>
-        <h1>Page not found</h1>
-        <p>The route you requested does not exist.</p>
+    <div className="flex items-center justify-center min-h-screen p-6">
+      <Card className="max-w-sm w-full p-8 text-center flex flex-col items-center gap-4">
+        <span className="text-xs uppercase tracking-[0.15em] text-[var(--accent)] font-semibold">404</span>
+        <h1 className="text-xl font-black tracking-tight">Page not found</h1>
+        <p className="text-sm text-[var(--muted)]">The route you requested does not exist.</p>
         <Button onClick={() => navigate('/dashboard')}>Go to dashboard</Button>
       </Card>
     </div>

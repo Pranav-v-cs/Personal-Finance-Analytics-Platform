@@ -26,19 +26,19 @@ const ChartHeatmap = memo(function ChartHeatmap({ data }) {
   }
 
   return (
-    <div className="heatmap-grid">
+    <div className="grid grid-cols-7 gap-2">
       {grid.map((cell) => {
         const intensity = getIntensity(cell.avg, maxAvg)
         const alpha = 0.12 + intensity * 0.5
         return (
           <div
             key={cell.day}
-            className="heatmap-cell"
+            className="flex flex-col items-center gap-0.5 rounded-lg p-3 text-center"
             style={{ background: `rgba(124, 116, 232, ${alpha})` }}
           >
-            <div className="heatmap-day">{cell.label}</div>
-            <div className="heatmap-value">{formatCurrency(cell.avg)}</div>
-            <div className="heatmap-count">{cell.count} txns</div>
+            <div className="text-xs font-semibold text-[var(--muted)]">{cell.label}</div>
+            <div className="text-sm font-bold font-mono">{formatCurrency(cell.avg)}</div>
+            <div className="text-[10px] text-[var(--muted)]">{cell.count} txns</div>
           </div>
         )
       })}

@@ -5,10 +5,11 @@ import { formatCurrency } from '../../utils/format'
 function AreaTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip-label">{label}</div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
+      <div className="font-semibold mb-1">{label}</div>
       {payload.map((entry, i) => (
-        <div key={i} className="chart-tooltip-row" style={{ color: entry.color }}>
+        <div key={i} className="flex items-center gap-2" style={{ color: entry.color }}>
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: entry.color }} />
           {entry.name}: {formatCurrency(entry.value)}
         </div>
       ))}
@@ -20,7 +21,7 @@ const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spe
   if (!data?.length) return null
 
   return (
-    <div className="chart-container" style={{ height }}>
+    <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>

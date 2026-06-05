@@ -5,9 +5,9 @@ import { formatCurrency } from '../../utils/format'
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip-label">{label}</div>
-      <div className="chart-tooltip-value">{formatCurrency(payload[0].value)}</div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
+      <div className="font-semibold mb-1">{label}</div>
+      <div className="font-mono font-bold">{formatCurrency(payload[0].value)}</div>
     </div>
   )
 }
@@ -16,7 +16,7 @@ const ChartTrend = memo(function ChartTrend({ data, height = 240 }) {
   if (!data?.length) return null
 
   return (
-    <div className="chart-container" style={{ height }}>
+    <div style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>

@@ -52,19 +52,31 @@ export default function AuthPage() {
 
   return (
     <AuthLayout>
-      <div className="auth-tabs" role="tablist" aria-label="Authentication mode">
-        <button type="button" className={`auth-tab ${mode === 'login' ? 'is-active' : ''}`} onClick={() => setMode('login')}>
+      <div className="flex rounded-lg border border-[var(--border)] p-1 bg-[var(--surfaceStrong)] mb-6" role="tablist" aria-label="Authentication mode">
+        <button
+          type="button"
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold transition-all ${
+            mode === 'login' ? 'bg-[var(--bg)] text-[var(--text)] shadow-sm' : 'text-[var(--muted)]'
+          }`}
+          onClick={() => setMode('login')}
+        >
           Login
         </button>
-        <button type="button" className={`auth-tab ${mode === 'register' ? 'is-active' : ''}`} onClick={() => setMode('register')}>
+        <button
+          type="button"
+          className={`flex-1 rounded-md px-4 py-2 text-sm font-semibold transition-all ${
+            mode === 'register' ? 'bg-[var(--bg)] text-[var(--text)] shadow-sm' : 'text-[var(--muted)]'
+          }`}
+          onClick={() => setMode('register')}
+        >
           Register
         </button>
       </div>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         {visibleFields.includes('name') ? (
-          <label className="field">
-            <span>Name</span>
+          <label className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Name</span>
             <Input
               value={form.name}
               onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
@@ -74,8 +86,8 @@ export default function AuthPage() {
           </label>
         ) : null}
 
-        <label className="field">
-          <span>Email</span>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Email</span>
           <Input
             type="email"
             value={form.email}
@@ -85,8 +97,8 @@ export default function AuthPage() {
           <InlineError message={errors.email} />
         </label>
 
-        <label className="field">
-          <span>Password</span>
+        <label className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Password</span>
           <Input
             type="password"
             value={form.password}

@@ -1,21 +1,25 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Card } from '../components/ui/Card'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
+import { PageContainer } from '../components/layout/PageContainer'
 import { PageHeader } from '../components/common/PageHeader'
-import { Badge } from '../components/common/Badge'
+import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { InlineError } from '../components/common/InlineError'
-import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
+import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
+import { Input, Select } from '../components/ui/Input'
+import { Label } from '../components/ui/Label'
+import { Separator } from '../components/ui/Separator'
 import { useBudgets } from '../hooks/useBudgets'
 import { formatCurrency } from '../utils/format'
 import { listCategories } from '../services/categoryService'
 
 function BudgetSkeleton() {
   return (
-    <div className="budgets-grid">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="budget-card">
-          <SkeletonLine className="w-32" />
-          <Skeleton className="budget-bar-skeleton" />
+        <Card key={i}>
+          <SkeletonLine className="w-32 mb-3" />
+          <Skeleton className="h-2 w-full rounded" />
         </Card>
       ))}
     </div>
@@ -37,20 +41,23 @@ function BudgetCard({ budget, onEdit, onDelete }) {
   const remaining = Math.max(limit - current, 0)
 
   return (
-    <Card className={`budget-card budget-${status.health}`}>
-      <div className="budget-card-header">
-        <div>
-          <div className="budget-category">{budget.category}</div>
-          <Badge tone={status.tone}>{status.label}</Badge>
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="text-base">{budget.category}</CardTitle>
+            <Badge variant={status.tone}>{status.label}</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onEdit(budget)}>Edit</Button>
+            <Button variant="danger" size="sm" onClick={() => onDelete(budget)}>Delete</Button>
+          </div>
         </div>
-        <div className="budget-actions">
-          <button type="button" className="text-button" onClick={() => onEdit(budget)}>Edit</button>
-          <button type="button" className="text-button danger" onClick={() => onDelete(budget)}>Delete</button>
-        </div>
-      </div>
+      </CardHeader>
 
-      <div className="budget-ring-wrap">
-        <svg className="budget-ring" viewBox="0 0 120 120">
+      <CardContent>
+      <div className="flex justify-center py-2">
+        <svg viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
           <circle
             cx="60" cy="60" r="52"
@@ -70,26 +77,26 @@ function BudgetCard({ budget, onEdit, onDelete }) {
         </svg>
       </div>
 
-      <div className="budget-details">
-        <div className="budget-detail-row">
-          <span className="budget-detail-label">Spent</span>
-          <span className="budget-detail-value">{formatCurrency(current)}</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--muted)]">Spent</span>
+          <span className="font-semibold font-mono">{formatCurrency(current)}</span>
         </div>
-        <div className="budget-detail-row">
-          <span className="budget-detail-label">Limit</span>
-          <span className="budget-detail-value">{formatCurrency(limit)}</span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--muted)]">Limit</span>
+          <span className="font-semibold font-mono">{formatCurrency(limit)}</span>
         </div>
-        <div className="budget-detail-row">
-          <span className="budget-detail-label">Remaining</span>
-          <span className={`budget-detail-value ${remaining === 0 ? 'budget-over' : ''}`}>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--muted)]">Remaining</span>
+          <span className={`font-semibold font-mono ${remaining === 0 ? 'text-[var(--accent)]' : ''}`}>
             {formatCurrency(remaining)}
           </span>
         </div>
       </div>
 
-      <div className="budget-bar-track">
+      <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
         <div
-          className="budget-bar-fill"
+          className="h-full rounded-full transition-all"
           style={{
             width: `${Math.min(pct, 100)}%`,
             background: current > limit
@@ -100,6 +107,7 @@ function BudgetCard({ budget, onEdit, onDelete }) {
           }}
         />
       </div>
+      </CardContent>
     </Card>
   )
 }
@@ -119,25 +127,28 @@ function GoalCard({ goal, onEdit, onDelete, onAddFunds }) {
     : null
 
   return (
-    <Card className="goal-card">
-      <div className="goal-card-header">
-        <div>
-          <div className="goal-name">{goal.name}</div>
-          {daysLeft !== null && (
-            <Badge tone={daysLeft <= 7 ? 'warning' : daysLeft <= 30 ? 'info' : 'success'}>
-              {daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}
-            </Badge>
-          )}
+    <Card>
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex flex-col gap-1.5">
+            <CardTitle className="text-base">{goal.name}</CardTitle>
+            {daysLeft !== null && (
+              <Badge variant={daysLeft <= 7 ? 'warning' : daysLeft <= 30 ? 'info' : 'success'}>
+                {daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" onClick={() => onAddFunds(goal)}>Add funds</Button>
+            <Button variant="ghost" size="sm" onClick={() => onEdit(goal)}>Edit</Button>
+            <Button variant="danger" size="sm" onClick={() => onDelete(goal)}>Delete</Button>
+          </div>
         </div>
-        <div className="budget-actions">
-          <button type="button" className="text-button" onClick={() => onAddFunds(goal)}>Add funds</button>
-          <button type="button" className="text-button" onClick={() => onEdit(goal)}>Edit</button>
-          <button type="button" className="text-button danger" onClick={() => onDelete(goal)}>Delete</button>
-        </div>
-      </div>
+      </CardHeader>
 
-      <div className="budget-ring-wrap">
-        <svg className="budget-ring" viewBox="0 0 120 120">
+      <CardContent>
+      <div className="flex justify-center py-2">
+        <svg viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
           <circle
             cx="60" cy="60" r="52"
@@ -157,38 +168,39 @@ function GoalCard({ goal, onEdit, onDelete, onAddFunds }) {
         </svg>
       </div>
 
-      <div className="budget-details">
-        <div className="budget-detail-row">
-          <span className="budget-detail-label">Saved</span>
-          <span className="budget-detail-value">{formatCurrency(current)}</span>
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--muted)]">Saved</span>
+          <span className="font-semibold font-mono">{formatCurrency(current)}</span>
         </div>
-        <div className="budget-detail-row">
-          <span className="budget-detail-label">Target</span>
-          <span className="budget-detail-value">{formatCurrency(target)}</span>
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-[var(--muted)]">Target</span>
+          <span className="font-semibold font-mono">{formatCurrency(target)}</span>
         </div>
         {dailyNeeded !== null && (
-          <div className="budget-detail-row">
-            <span className="budget-detail-label">Daily needed</span>
-            <span className="budget-detail-value budget-highlight">{formatCurrency(dailyNeeded)}</span>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Daily needed</span>
+            <span className="text-[var(--accent)] font-bold">{formatCurrency(dailyNeeded)}</span>
           </div>
         )}
         {pct >= 100 && (
-          <div className="budget-detail-row">
-            <span className="budget-detail-label">Status</span>
-            <span className="budget-detail-value" style={{ color: '#66bb6a', fontWeight: 700 }}>Goal reached!</span>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Status</span>
+            <span className="font-semibold font-mono" style={{ color: '#66bb6a', fontWeight: 700 }}>Goal reached!</span>
           </div>
         )}
       </div>
 
-      <div className="budget-bar-track">
+      <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
         <div
-          className="budget-bar-fill"
+          className="h-full rounded-full transition-all"
           style={{
             width: `${Math.min(pct, 100)}%`,
             background: pct >= 100 ? 'linear-gradient(90deg, #66bb6a, #2e7d32)' : 'linear-gradient(90deg, var(--accent), #42a5f5)',
           }}
         />
       </div>
+      </CardContent>
     </Card>
   )
 }
@@ -216,21 +228,21 @@ function GoalForm({ onSubmit, onCancel, initial }) {
   }
 
   return (
-    <form className="budget-form" onSubmit={handleSubmit}>
-      <div className="field">
-        <label className="label">Goal name</label>
-        <input className="input" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" />
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="goal-name">Goal name</Label>
+        <Input id="goal-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" />
       </div>
-      <div className="field">
-        <label className="label">Target amount (₹)</label>
-        <input className="input" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="goal-amount">Target amount (₹)</Label>
+        <Input id="goal-amount" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" />
       </div>
-      <div className="field">
-        <label className="label">Target date (optional)</label>
-        <input className="input" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="goal-date">Target date (optional)</Label>
+        <Input id="goal-date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
       </div>
       {error && <InlineError message={error} />}
-      <div className="form-actions">
+      <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create goal'}</Button>
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
       </div>
@@ -258,14 +270,14 @@ function AddFundsForm({ goal, onSubmit, onCancel }) {
   }
 
   return (
-    <form className="budget-form" onSubmit={handleSubmit}>
-      <p className="form-note">Adding funds to <strong>{goal.name}</strong></p>
-      <div className="field">
-        <label className="label">Amount to add (₹)</label>
-        <input className="input" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <p className="text-sm">Adding funds to <strong>{goal.name}</strong></p>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="add-funds-amount">Amount to add (₹)</Label>
+        <Input id="add-funds-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
       </div>
       {error && <InlineError message={error} />}
-      <div className="form-actions">
+      <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add funds'}</Button>
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
       </div>
@@ -295,22 +307,22 @@ function BudgetForm({ categories, onSubmit, onCancel, initial }) {
   }
 
   return (
-    <form className="budget-form" onSubmit={handleSubmit}>
-      <div className="field">
-        <label className="label">Category</label>
-        <select className="select" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!initial}>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="budget-category">Category</Label>
+        <Select id="budget-category" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!initial}>
           <option value="">Select category</option>
           {categories.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
-        </select>
+        </Select>
       </div>
-      <div className="field">
-        <label className="label">Monthly limit (₹)</label>
-        <input className="input" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" />
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="budget-limit">Monthly limit (₹)</Label>
+        <Input id="budget-limit" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" />
       </div>
       {error && <InlineError message={error} />}
-      <div className="form-actions">
+      <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create budget'}</Button>
         {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
       </div>
@@ -423,24 +435,25 @@ export default function BudgetsPage() {
 
   if (loading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." />
         <BudgetSkeleton />
-      </>
+      </PageContainer>
     )
   }
 
   if (error) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." />
         <InlineError message={error} />
-      </>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="budgets-stack">
+    <PageContainer>
+      <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Planning"
         title="Budgets & goals"
@@ -453,42 +466,57 @@ export default function BudgetsPage() {
       />
 
       {showForm && (
-        <Card className="budget-form-card">
-          <h3>Create budget</h3>
-          <BudgetForm categories={availableCategories} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Create budget</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BudgetForm categories={availableCategories} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+          </CardContent>
         </Card>
       )}
 
       {editing && (
-        <Card className="budget-form-card">
-          <h3>Edit budget</h3>
-          <BudgetForm categories={[editing.category]} onSubmit={handleUpdate} onCancel={() => setEditing(null)} initial={editing} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit budget</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <BudgetForm categories={[editing.category]} onSubmit={handleUpdate} onCancel={() => setEditing(null)} initial={editing} />
+          </CardContent>
         </Card>
       )}
 
       {budgets.length === 0 && !showForm ? (
-        <Card className="placeholder-panel">
-          <p className="panel-copy">
-            Create a budget to start tracking spending targets and improve your Financial Health score.
-          </p>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-[var(--muted)] text-center py-8">
+              Create a budget to start tracking spending targets and improve your Financial Health score.
+            </p>
+          </CardContent>
         </Card>
       ) : (
         <>
-          <div className="budget-summary-strip">
-            <div className="budget-summary-stat">
-              <span className="typo-metric-value">{formatCurrency(totalSpent)}</span>
-              <span className="typo-metadata">Spent of {formatCurrency(totalBudgeted)}</span>
-            </div>
-            <div className="budget-summary-stat">
-              <span className="typo-metric-value">{budgetUtilization}%</span>
-              <span className="typo-metadata">Overall utilization</span>
-            </div>
-            <div className="budget-summary-stat">
-              <span className="typo-metric-value">{budgetCount}</span>
-              <span className="typo-metadata">Active budgets</span>
-            </div>
-          </div>
-          <div className="budgets-grid">
+          <Card>
+            <CardContent className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)] font-medium">Total spent</span>
+                <span className="text-xl font-extrabold tracking-tight">{formatCurrency(totalSpent)}</span>
+                <span className="text-[10px] text-[var(--muted)]">of {formatCurrency(totalBudgeted)} budgeted</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)] font-medium">Utilization</span>
+                <span className="text-xl font-extrabold tracking-tight">{budgetUtilization}%</span>
+                <span className="text-[10px] text-[var(--muted)]">overall budget used</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)] font-medium">Active budgets</span>
+                <span className="text-xl font-extrabold tracking-tight">{budgetCount}</span>
+                <span className="text-[10px] text-[var(--muted)]">categories tracked</span>
+              </div>
+            </CardContent>
+          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {budgets.map((budget) => (
               <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete} />
             ))}
@@ -496,12 +524,12 @@ export default function BudgetsPage() {
         </>
       )}
 
-      <hr className="section-divider" />
+      <Separator />
 
-      <div className="section-header-wrap">
-        <div className="section-header">
-          <h2 className="section-title">Goals</h2>
-          <p className="section-desc">Set savings targets and track your progress.</p>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-lg font-bold tracking-tight">Goals</h2>
+          <p className="text-sm text-[var(--muted)]">Set savings targets and track your progress.</p>
         </div>
         <Button onClick={() => { setShowGoalForm(true); setEditingGoal(null); setFundingGoal(null) }}>
           New goal
@@ -509,40 +537,54 @@ export default function BudgetsPage() {
       </div>
 
       {showGoalForm && (
-        <Card className="budget-form-card">
-          <h3>Create goal</h3>
-          <GoalForm onSubmit={handleGoalCreate} onCancel={() => setShowGoalForm(false)} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Create goal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GoalForm onSubmit={handleGoalCreate} onCancel={() => setShowGoalForm(false)} />
+          </CardContent>
         </Card>
       )}
 
       {editingGoal && (
-        <Card className="budget-form-card">
-          <h3>Edit goal</h3>
-          <GoalForm onSubmit={handleGoalUpdate} onCancel={() => setEditingGoal(null)} initial={editingGoal} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Edit goal</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <GoalForm onSubmit={handleGoalUpdate} onCancel={() => setEditingGoal(null)} initial={editingGoal} />
+          </CardContent>
         </Card>
       )}
 
       {fundingGoal && (
-        <Card className="budget-form-card">
-          <h3>Add funds</h3>
-          <AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} />
+        <Card>
+          <CardHeader>
+            <CardTitle>Add funds</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} />
+          </CardContent>
         </Card>
       )}
 
       {goals.length === 0 && !showGoalForm ? (
-        <Card className="placeholder-panel">
-          <p className="panel-copy">
-            Set a savings goal to improve your Financial Health score and track progress toward your financial targets.
-          </p>
+        <Card>
+          <CardContent>
+            <p className="text-sm text-[var(--muted)] text-center py-8">
+              Set a savings goal to improve your Financial Health score and track progress toward your financial targets.
+            </p>
+          </CardContent>
         </Card>
       ) : (
         <>
           {activeGoals.active.length > 0 && (
             <>
-              <div className="section-subtitle">
-                <h3 className="typo-description" style={{ fontWeight: 700, margin: 0 }}>Active</h3>
+              <div>
+                <h3 className="text-base font-extrabold tracking-tight">Active goals</h3>
               </div>
-              <div className="budgets-grid">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {activeGoals.active.map((goal) => (
                   <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
                 ))}
@@ -550,13 +592,13 @@ export default function BudgetsPage() {
             </>
           )}
           {activeGoals.completed.length > 0 && (
-            <details className="completed-section">
-              <summary className="completed-summary">
-                <span className="typo-description" style={{ fontWeight: 600 }}>
+            <details>
+              <summary className="cursor-pointer text-sm">
+                <span style={{ fontWeight: 600 }}>
                   Completed goals ({activeGoals.completed.length})
                 </span>
               </summary>
-              <div className="budgets-grid" style={{ marginTop: 'var(--space-4)' }}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                 {activeGoals.completed.map((goal) => (
                   <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
                 ))}
@@ -566,5 +608,6 @@ export default function BudgetsPage() {
         </>
       )}
     </div>
+    </PageContainer>
   )
 }

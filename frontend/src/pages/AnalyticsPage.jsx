@@ -1,9 +1,10 @@
 import { useMemo } from 'react'
-import { Card } from '../components/ui/Card'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card'
+import { PageContainer } from '../components/layout/PageContainer'
 import { PageHeader } from '../components/common/PageHeader'
-import { Badge } from '../components/common/Badge'
+import { Badge } from '../components/ui/Badge'
 import { InlineError } from '../components/common/InlineError'
-import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
+import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { formatCurrency, formatDate, formatMonthLabel } from '../utils/format'
 import ChartTrend from '../components/common/ChartTrend'
@@ -18,7 +19,7 @@ function DeltaBadge({ value }) {
   if (value === 0 || value === null || value === undefined) return null
   const isUp = value > 0
   return (
-    <Badge tone={isUp ? 'warning' : 'success'}>
+    <Badge variant={isUp ? 'warning' : 'success'}>
       {isUp ? '▲' : '▼'} {Math.abs(value)}%
     </Badge>
   )
@@ -26,12 +27,12 @@ function DeltaBadge({ value }) {
 
 function StatCard({ label, value, badge }) {
   return (
-    <Card className="analytics-panel">
-      <div className="stat-card">
-        <div className="stat-label">{label}</div>
-        <div className="stat-value-row">
-          <div className="stat-value">{value}</div>
-          {badge && <div className="stat-badge">{badge}</div>}
+    <Card>
+      <div>
+        <div className="text-sm text-[var(--muted)] font-medium">{label}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-[clamp(1.3rem,2.5vw,1.85rem)] font-extrabold tracking-tight">{value}</div>
+          {badge && <div className="flex-shrink-0">{badge}</div>}
         </div>
       </div>
     </Card>
@@ -40,15 +41,13 @@ function StatCard({ label, value, badge }) {
 
 function AnalyticsSkeleton() {
   return (
-    <div className="analytics-stack">
-      <div className="analytics-grid">
-        <Card className="analytics-panel">
+    <div className="flex flex-col gap-10">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
           <SkeletonLine className="w-40" />
-          <Skeleton className="chart-placeholder" />
-        </Card>
-        <Card className="analytics-panel">
-          <SkeletonLine className="w-32" />
-          <Skeleton className="chart-placeholder" />
+          <Skeleton className="h-[200px]" />
+
+          <Skeleton className="h-[200px]" />
         </Card>
       </div>
     </div>
@@ -125,24 +124,25 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Analytics" title="Understand your spending" description="Deep-dive analytics are being prepared." />
         <AnalyticsSkeleton />
-      </>
+      </PageContainer>
     )
   }
 
   if (error) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Analytics" title="Understand your spending" description="Detailed breakdowns of where your money goes." />
         <InlineError message={error} />
-      </>
+      </PageContainer>
     )
   }
 
   return (
-    <div className="analytics-stack">
+    <PageContainer>
+      <div className="flex flex-col gap-10">
       <PageHeader
         eyebrow="Analytics"
         title="Understand your spending"
@@ -150,8 +150,9 @@ export default function AnalyticsPage() {
       />
 
       {/* 1. Spending Overview */}
-      <section className="analytics-section">
-        <div className="stats-grid">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Spending overview</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <StatCard
             label="Total Spending"
             value={formatCurrency(summary?.totalExpenses)}
@@ -170,57 +171,65 @@ export default function AnalyticsPage() {
             value={summary?.expenseCount ?? 0}
           />
         </div>
-        {trendNarrative && <p className="trend-narrative">{trendNarrative}</p>}
-        <div className="sparkline-wrap">
+        {trendNarrative && <p className="text-sm text-[var(--muted)] italic">{trendNarrative}</p>}
+        <div className="mt-2">
           <ChartTrend data={monthly} height={80} />
         </div>
       </section>
 
       {/* 2. Spending Trends */}
-      <section className="analytics-section">
-        <div className="section-heading">
-          <h2>Spending trends</h2>
-        </div>
-        <div className="analytics-grid">
-          <Card className="analytics-panel">
-            <div className="panel-heading"><h3>Cumulative spending</h3></div>
-            <ChartArea data={cumulativeData} dataKey="cumulative" name="Total" height={240} />
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Spending trends</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Cumulative spending</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartArea data={cumulativeData} dataKey="cumulative" name="Total" height={240} />
+            </CardContent>
           </Card>
-          <Card className="analytics-panel">
-            <div className="panel-heading"><h3>Category mix over time</h3></div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Category mix over time</CardTitle>
+            </CardHeader>
+            <CardContent>
             {stackedData.length ? (
               <ChartStacked data={stackedData} categories={stackedCategories} />
             ) : (
-              <p className="empty-inline">Add expenses in different categories to see how your spending breaks down over time.</p>
+              <p className="text-sm text-[var(--muted)] text-center py-8">Add expenses in different categories to see how your spending breaks down over time.</p>
             )}
+            </CardContent>
           </Card>
         </div>
       </section>
 
       {/* 3. Category Intelligence */}
-      <section className="analytics-section">
-        <div className="section-heading">
-          <h2>Category intelligence</h2>
-        </div>
-        <Card className="analytics-panel">
-          <div className="intel-layout">
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Category intelligence</h2>
+        <Card>
+          <CardHeader>
+            <CardTitle>Category breakdown & insights</CardTitle>
+          </CardHeader>
+          <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <ChartDonut data={categories} />
-            <div className="category-intel-sidebar">
+            <div className="flex flex-col gap-1">
               {(categories || []).map((cat, i) => {
                 const trend = categoryTrends?.[cat.category]
                 return (
-                  <div key={cat.category} className="category-intel-row">
-                    <div className="category-intel-name">
-                      <span className="category-intel-dot" style={{ background: COLORS[i % COLORS.length] }} />
+                  <div key={cat.category} className="flex items-center justify-between text-sm py-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
                       {cat.category}
                     </div>
-                    <div className="category-intel-right">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       {trend && trend.direction !== 'flat' && (
-                        <span className={`trend-arrow category-trend-${trend.direction}`}>
+                        <span className={`text-xs category-trend-${trend.direction}`}>
                           {trend.direction === 'up' ? '▲' : trend.direction === 'down' ? '▼' : '◆'} {Math.abs(trend.change)}%
                         </span>
                       )}
-                      <span className="category-intel-amount">{formatCurrency(cat.total)}</span>
+                      <span className="font-semibold font-mono tabular-nums">{formatCurrency(cat.total)}</span>
                     </div>
                   </div>
                 )
@@ -228,31 +237,37 @@ export default function AnalyticsPage() {
             </div>
           </div>
           {categoryInsights.length > 0 && (
-            <div className="category-insights">
+            <div className="flex flex-col gap-1 mt-4">
               {categoryInsights.map((insight, i) => (
-                <div key={i} className="category-insight-item">{insight}</div>
+                <div key={i} className="text-xs text-[var(--muted)]">{insight}</div>
               ))}
             </div>
           )}
+          </CardContent>
         </Card>
       </section>
 
       {/* 4. Spending Behavior */}
-      <section className="analytics-section">
-        <div className="section-heading">
-          <h2>Spending behavior</h2>
-        </div>
-        <div className="analytics-grid">
-          <Card className="analytics-panel">
-            <div className="panel-heading"><h3>Weekly heatmap</h3></div>
-            <ChartHeatmap data={analytics?.weekday_aggregates} />
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Spending behavior</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly heatmap</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartHeatmap data={analytics?.weekday_aggregates} />
+            </CardContent>
           </Card>
-          <Card className="analytics-panel">
-            <div className="panel-heading"><h3>Top transactions</h3></div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Top transactions</CardTitle>
+            </CardHeader>
+            <CardContent>
             {(analytics?.largest_transactions || []).length > 0 ? (
-              <div className="recent-list">
+              <div className="flex flex-col gap-2">
                 {analytics.largest_transactions.map((txn) => (
-                  <div key={txn.id} className="recent-row">
+                  <div key={txn.id} className="flex items-center justify-between text-sm">
                     <div>
                       <strong>{txn.title}</strong>
                       <span>{txn.category} · {formatDate(txn.date)}</span>
@@ -262,126 +277,144 @@ export default function AnalyticsPage() {
                 ))}
               </div>
             ) : (
-              <p className="empty-inline">No transactions recorded.</p>
+              <p className="text-sm text-[var(--muted)] text-center py-8">No transactions recorded.</p>
             )}
             {frequencyMetrics && (
-              <div className="mom-comparison" style={{ marginTop: 'var(--space-4)' }}>
-                <div className="mom-row">
-                  <span className="mom-label">Transactions / week</span>
-                  <span className="mom-value">{frequencyMetrics.txnsPerWeek}</span>
+              <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-[var(--border)]">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--muted)]">Transactions / week</span>
+                  <span className="font-semibold">{frequencyMetrics.txnsPerWeek}</span>
                 </div>
-                <div className="mom-row">
-                  <span className="mom-label">Average size</span>
-                  <span className="mom-value">{frequencyMetrics.avgSize}</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--muted)]">Average size</span>
+                  <span className="font-semibold">{frequencyMetrics.avgSize}</span>
                 </div>
-                <div className="mom-row">
-                  <span className="mom-label">Most active day</span>
-                  <span className="mom-value">{frequencyMetrics.mostActiveDay}</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--muted)]">Most active day</span>
+                  <span className="font-semibold">{frequencyMetrics.mostActiveDay}</span>
                 </div>
-                <div className="mom-row">
-                  <span className="mom-label">Least active day</span>
-                  <span className="mom-value">{frequencyMetrics.leastActiveDay}</span>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-[var(--muted)]">Least active day</span>
+                  <span className="font-semibold">{frequencyMetrics.leastActiveDay}</span>
                 </div>
               </div>
             )}
+            </CardContent>
           </Card>
         </div>
       </section>
 
       {/* 5. Forecasting */}
-      <section className="analytics-section">
-        <div className="section-heading">
-          <h2>Spending forecast</h2>
-        </div>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Spending forecast</h2>
         {forecast ? (
-          <div className="forecast-card">
-            <div className="forecast-header">
-              <h3>Month-end projection</h3>
-              <p style={{ margin: 0, fontSize: '0.8125rem', color: 'var(--muted)' }}>
-                Based on {forecast.daysElapsed} day{forecast.daysElapsed !== 1 ? 's' : ''} of data
-              </p>
-            </div>
-            <div className="forecast-body">
-              <div className="forecast-metric">
-                <span className="forecast-metric-label">Projected total</span>
-                <span className="forecast-metric-value">{formatCurrency(forecast.projected)}</span>
-                <span className="forecast-metric-tag">vs {formatCurrency(forecast.lastMonthTotal)} last month</span>
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-0.5">
+                <CardTitle>Month-end projection</CardTitle>
+                <p className="text-xs text-[var(--muted)]">
+                  Based on {forecast.daysElapsed} day{forecast.daysElapsed !== 1 ? 's' : ''} of data
+                </p>
               </div>
-              <div className="forecast-metric">
-                <span className="forecast-metric-label">Daily average</span>
-                <span className="forecast-metric-value">{formatCurrency(forecast.dailyRate)}</span>
-                <span className="forecast-metric-tag">{forecast.daysRemaining} day{forecast.daysRemaining !== 1 ? 's' : ''} remaining</span>
+            </CardHeader>
+            <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)]">Projected total</span>
+                <span className="text-lg font-extrabold tracking-tight">{formatCurrency(forecast.projected)}</span>
+                <span className="text-xs text-[var(--muted)]">vs {formatCurrency(forecast.lastMonthTotal)} last month</span>
               </div>
-              <div className="forecast-metric">
-                <span className="forecast-metric-label">Confidence</span>
-                <span className="forecast-metric-value">{forecast.confidence}</span>
-                <span className="forecast-metric-tag">
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)]">Daily average</span>
+                <span className="text-lg font-extrabold tracking-tight">{formatCurrency(forecast.dailyRate)}</span>
+                <span className="text-xs text-[var(--muted)]">{forecast.daysRemaining} day{forecast.daysRemaining !== 1 ? 's' : ''} remaining</span>
+              </div>
+              <div className="flex flex-col gap-0.5">
+                <span className="text-xs text-[var(--muted)]">Confidence</span>
+                <span className="text-lg font-extrabold tracking-tight">{forecast.confidence}</span>
+                <span className="text-xs text-[var(--muted)]">
                   {forecast.confidence === 'High' ? 'Sufficient data' : forecast.confidence === 'Medium' ? 'Partial data' : 'Limited data'}
                 </span>
               </div>
             </div>
-            <p className="forecast-narrative">
-              {forecast.vsLastMonth > 0
-                ? `If current pace holds, you will exceed last month by ${forecast.vsLastMonth}%.`
-                : forecast.vsLastMonth < 0
-                  ? `If current pace holds, you will spend ${Math.abs(forecast.vsLastMonth)}% less than last month.`
-                  : 'You are on track to match last month\'s spending.'}
-            </p>
-          </div>
+            </CardContent>
+            <CardFooter>
+              <p className="text-sm text-[var(--muted)]">
+                {forecast.vsLastMonth > 0
+                  ? `If current pace holds, you will exceed last month by ${forecast.vsLastMonth}%.`
+                  : forecast.vsLastMonth < 0
+                    ? `If current pace holds, you will spend ${Math.abs(forecast.vsLastMonth)}% less than last month.`
+                    : 'You are on track to match last month\'s spending.'}
+              </p>
+            </CardFooter>
+          </Card>
         ) : (
-          <Card className="analytics-panel placeholder-panel">
-            <p className="panel-copy">Add expenses this month to see your spending forecast.</p>
+          <Card>
+            <CardContent>
+              <p className="text-sm text-[var(--muted)] text-center py-8">Add expenses this month to see your spending forecast.</p>
+            </CardContent>
           </Card>
         )}
       </section>
 
       {/* 6. Anomaly Detection */}
-      <section className="analytics-section">
-        <div className="section-heading">
-          <h2>Unusual activity</h2>
-        </div>
+      <section className="flex flex-col gap-4">
+        <h2 className="text-lg font-extrabold tracking-tight">Unusual activity</h2>
         {anomalyInsights.transactions.length > 0 || anomalyInsights.categorySpikes.length > 0 ? (
           <>
             {anomalyInsights.transactions.length > 0 && (
-              <div className="analytics-grid">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {anomalyInsights.transactions.map((txn) => (
-                  <div key={txn.id} className="anomaly-card">
-                    <div className="anomaly-card-header">
-                      <h4>{txn.title}</h4>
-                      <span className="anomaly-amount">{formatCurrency(txn.amount)}</span>
-                    </div>
-                    <div className="anomaly-details">
-                      <span>{txn.category} · {formatDate(txn.date)}</span>
-                    </div>
-                    <div className="anomaly-zscore">
-                      {avgExpense > 0
-                        ? `${Math.round(txn.amount / avgExpense)}x your average expense`
-                        : `z-score: ${txn.z_score}`}
-                    </div>
-                  </div>
+                  <Card key={txn.id}>
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">{txn.title}</CardTitle>
+                        <span className="text-lg font-extrabold font-mono">{formatCurrency(txn.amount)}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+                        <span>{txn.category}</span>
+                        <span>·</span>
+                        <span>{formatDate(txn.date)}</span>
+                      </div>
+                      <div className="text-xs text-[var(--accent)] font-semibold mt-1">
+                        {avgExpense > 0
+                          ? `${Math.round(txn.amount / avgExpense)}x your average expense`
+                          : `z-score: ${txn.z_score}`}
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
             {anomalyInsights.categorySpikes.length > 0 && (
-              <div className="anomaly-spike-list">
+              <div className="flex flex-col gap-3">
                 {anomalyInsights.categorySpikes.map((spike) => (
-                  <div key={spike.category} className="anomaly-spike">
-                    <h4>{spike.category} spike</h4>
-                    <p>
-                      {spike.category} spending is {spike.percentAbove}% above normal this month
-                      ({formatCurrency(spike.current)} vs typical {formatCurrency(spike.average)})
-                    </p>
-                  </div>
+                  <Card key={spike.category}>
+                    <CardHeader>
+                      <CardTitle className="text-base">{spike.category} spike</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-[var(--muted)]">
+                        {spike.category} spending is <strong className="text-[var(--accent)]">{spike.percentAbove}%</strong> above normal this month
+                        ({formatCurrency(spike.current)} vs typical {formatCurrency(spike.average)})
+                      </p>
+                    </CardContent>
+                  </Card>
                 ))}
               </div>
             )}
           </>
         ) : (
-          <Card className="analytics-panel placeholder-panel">
-            <p className="panel-copy">No unusual transactions detected. Your spending patterns appear consistent.</p>
+          <Card>
+            <CardContent>
+              <p className="text-sm text-[var(--muted)] text-center py-8">No unusual transactions detected. Your spending patterns appear consistent.</p>
+            </CardContent>
           </Card>
         )}
       </section>
     </div>
+    </PageContainer>
   )
 }

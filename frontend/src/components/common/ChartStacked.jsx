@@ -7,13 +7,16 @@ const COLORS = ['#7c74e8', '#5a52cc', '#9d94f0', '#4a42b8', '#b4acf8', '#3a32a4'
 function StackedTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip-label">{label}</div>
-      {payload.map((entry, i) => (
-        <div key={i} className="chart-tooltip-row" style={{ color: entry.color }}>
-          {entry.name}: {formatCurrency(entry.value)}
-        </div>
-      ))}
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
+      <div className="font-semibold mb-1">{label}</div>
+      <div className="flex flex-col gap-0.5">
+        {payload.map((entry, i) => (
+          <div key={i} className="flex items-center gap-2" style={{ color: entry.color }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: entry.color }} />
+            {entry.name}: {formatCurrency(entry.value)}
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -22,7 +25,7 @@ const ChartStacked = memo(function ChartStacked({ data, categories }) {
   if (!data?.length || !categories?.length) return null
 
   return (
-    <div className="chart-container" style={{ height: 300 }}>
+    <div style={{ height: 300 }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />

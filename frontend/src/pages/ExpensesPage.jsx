@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react'
-import { Badge } from '../components/common/Badge'
+import { useMemo, useState, useRef, useEffect } from 'react'
+import { Badge } from '../components/ui/Badge'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
 import { PageHeader } from '../components/common/PageHeader'
-import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
+import { PageContainer } from '../components/layout/PageContainer'
+import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
-import { Card } from '../components/ui/Card'
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { Input, Select, Textarea } from '../components/ui/Input'
 import { adaptExpense } from '../utils/expense'
 import { formatCurrency, formatDate } from '../utils/format'
@@ -19,15 +20,23 @@ const emptyForm = {
   notes: '',
 }
 
+function todayString() {
+  return new Date().toISOString().split('T')[0]
+}
+
 function ExpensesSkeleton() {
   return (
-    <div className="expenses-layout">
-      <Card className="expenses-panel">
-        <SkeletonLine className="w-48" />
-        <Skeleton className="filters-skeleton" />
+    <div className="flex flex-col gap-6">
+      <Card>
+        <CardContent>
+          <SkeletonLine className="w-48 mb-4" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
       </Card>
-      <Card className="expenses-panel">
-        <Skeleton className="table-skeleton" />
+      <Card>
+        <CardContent>
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
       </Card>
     </div>
   )
@@ -35,9 +44,16 @@ function ExpensesSkeleton() {
 
 export default function ExpensesPage() {
   const { expenses, categories, filters, setFilters, loading, saving, error, createExpenseItem, updateExpenseItem, removeExpenseItem } = useExpenses()
+  const amountRef = useRef(null)
   const [search, setSearch] = useState('')
   const [editingId, setEditingId] = useState(null)
-  const [form, setForm] = useState(emptyForm)
+  const [form, setForm] = useState({ ...emptyForm, date: todayString() })
+  const [showMore, setShowMore] = useState(false)
+  const [showFilters, setShowFilters] = useState(false)
+
+  useEffect(() => {
+    if (!editingId) amountRef.current?.focus()
+  }, [editingId])
 
   const visibleExpenses = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -58,17 +74,20 @@ export default function ExpensesPage() {
       date: adapted.date || '',
       notes: adapted.notes || '',
     })
+    setShowMore(true)
   }
 
   const resetForm = () => {
     setEditingId(null)
-    setForm(emptyForm)
+    setForm({ ...emptyForm, date: todayString() })
+    setShowMore(false)
   }
 
   const handleSubmit = async (event) => {
     event.preventDefault()
+    if (!form.category) return
     const payload = {
-      title: form.title.trim(),
+      title: editingId ? form.title.trim() : form.category,
       amount: form.amount,
       category: form.category,
       date: form.date,
@@ -85,149 +104,231 @@ export default function ExpensesPage() {
 
   if (loading) {
     return (
-      <>
+      <PageContainer>
         <PageHeader eyebrow="Transactions" title="Record and manage expenses" description="Loading your records..." />
         <ExpensesSkeleton />
-      </>
+      </PageContainer>
     )
   }
 
-    return (
-      <div className="expenses-layout">
+  return (
+    <PageContainer>
+      <div className="flex flex-col gap-8">
         <PageHeader
           eyebrow="Transactions"
           title="Record and manage expenses"
           description="Add new records, browse history, or filter by category, date, or amount."
-          actions={<Badge tone="default">{visibleExpenses.length} items</Badge>}
+          actions={<Badge variant="default">{visibleExpenses.length} items</Badge>}
         />
 
         <InlineError message={error} />
 
-        <div className="expenses-grid">
-          <Card className="expenses-panel">
-          <div className="panel-heading">
-            <div>
-              <div className="eyebrow">{editingId ? 'Edit expense' : 'New expense'}</div>
-              <h2>{editingId ? 'Update record' : 'Add record'}</h2>
-            </div>
-            {editingId ? (
-              <button type="button" className="text-button" onClick={resetForm}>
-                Cancel
-              </button>
-            ) : null}
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* --- Add Transaction Card (QuickAdd-style) --- */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex flex-col gap-0">
+                  <span className="text-[10px] uppercase tracking-[0.12em] text-[var(--accent)] font-semibold">
+                    {editingId ? 'Edit expense' : 'Quick add'}
+                  </span>
+                  <CardTitle>{editingId ? 'Update record' : 'Add transaction'}</CardTitle>
+                </div>
+                {editingId ? (
+                  <Button variant="ghost" size="sm" onClick={resetForm}>Cancel</Button>
+                ) : null}
+              </div>
+            </CardHeader>
 
-          <form className="expense-form" onSubmit={handleSubmit}>
-            <label className="field">
-              <span>Title</span>
-              <Input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
-            </label>
-            <label className="field">
-              <span>Amount</span>
-              <Input type="number" step="0.01" min="0" value={form.amount} onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))} />
-            </label>
-            <label className="field">
-              <span>Category</span>
-              <Select value={form.category} onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}>
-                <option value="">Select category</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </Select>
-            </label>
-            <label className="field">
-              <span>Date</span>
-              <Input type="date" value={form.date} onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))} />
-            </label>
-            <label className="field field-full">
-              <span>Notes</span>
-              <Textarea rows="4" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} />
-            </label>
-            <div className="form-actions">
-              <Button type="submit" disabled={saving}>{saving ? 'Saving...' : editingId ? 'Update expense' : 'Add expense'}</Button>
-              <Button type="button" variant="ghost" onClick={resetForm}>Clear</Button>
-            </div>
-          </form>
-        </Card>
+            <CardContent>
+              <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+                <div className="flex gap-3">
+                  <div className="flex flex-col gap-1.5 flex-1">
+                    <label className="text-xs text-[var(--muted)] font-medium">Amount</label>
+                    <input
+                      ref={amountRef}
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={form.amount}
+                      onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                      className="h-10 w-full rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-lg font-bold font-mono text-[var(--text)] placeholder:text-[var(--muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-0"
+                    />
+                  </div>
 
-        <Card className="expenses-panel">
-          <div className="panel-heading">
-            <div>
-              <div className="eyebrow">Filters</div>
-              <h2>Refine results</h2>
-            </div>
-          </div>
-          <div className="filter-grid">
-            <label className="field">
-              <span>Search</span>
-              <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Food, rent, travel..." />
-            </label>
-            <label className="field">
-              <span>Category</span>
-              <Select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}>
-                <option value="">All categories</option>
-                {categories.map((category) => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </Select>
-            </label>
-            <label className="field">
-              <span>Start date</span>
-              <Input type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} />
-            </label>
-            <label className="field">
-              <span>End date</span>
-              <Input type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} />
-            </label>
-            <label className="field">
-              <span>Min amount</span>
-              <Input type="number" step="0.01" min="0" value={filters.minAmount} onChange={(event) => setFilters((current) => ({ ...current, minAmount: event.target.value }))} />
-            </label>
-            <label className="field">
-              <span>Max amount</span>
-              <Input type="number" step="0.01" min="0" value={filters.maxAmount} onChange={(event) => setFilters((current) => ({ ...current, maxAmount: event.target.value }))} />
-            </label>
-          </div>
-        </Card>
-      </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs text-[var(--muted)] font-medium">Date</label>
+                    <input
+                      type="date"
+                      value={form.date}
+                      onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+                      className="h-10 rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[var(--text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-0"
+                    />
+                  </div>
+                </div>
 
-      <Card className="expenses-panel">
-        <div className="panel-heading">
-          <div>
-            <div className="eyebrow">List</div>
-            <h2>Recent expenses</h2>
-          </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs text-[var(--muted)] font-medium">Category</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {categories.map((cat) => (
+                      <button
+                        key={cat}
+                        type="button"
+                        className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
+                          form.category === cat
+                            ? 'border-[var(--accent)] bg-[rgba(124,116,232,0.12)] text-[var(--accent)]'
+                            : 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted)] hover:border-[var(--accent)] hover:text-[var(--text)]'
+                        }`}
+                        onClick={() => setForm((current) => ({ ...current, category: cat }))}
+                      >
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="text-xs text-[var(--accent)] font-semibold hover:underline self-start"
+                  onClick={() => setShowMore((current) => !current)}
+                >
+                  {showMore ? 'Fewer options' : 'More options'}
+                </button>
+
+                {showMore ? (
+                  <div className="flex flex-col gap-3">
+                    {editingId ? (
+                      <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-[var(--muted)] font-medium">Title</label>
+                        <Input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} placeholder="Expense title" />
+                      </div>
+                    ) : null}
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">Notes</label>
+                      <textarea
+                        rows="2"
+                        value={form.notes}
+                        onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+                        placeholder="Optional notes or description..."
+                        className="flex min-h-[60px] w-full rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.02)] px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-0"
+                      />
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flex items-center gap-2 pt-1">
+                  <Button type="submit" disabled={saving || !form.category || !form.amount}>
+                    {saving ? 'Saving...' : editingId ? 'Update' : 'Add expense'}
+                  </Button>
+                  <Button type="button" variant="ghost" onClick={resetForm}>Clear</Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* --- Search & Filters Card --- */}
+          <Card>
+            <CardHeader>
+              <div className="flex flex-col gap-0">
+                <span className="text-xs uppercase tracking-[0.15em] text-[var(--accent)] font-semibold">Search</span>
+                <CardTitle>Find transactions</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <Input
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    placeholder="Search by title, category, or notes..."
+                    className="text-base"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  className="text-xs text-[var(--accent)] font-semibold hover:underline self-start"
+                  onClick={() => setShowFilters((current) => !current)}
+                >
+                  {showFilters ? 'Fewer filters' : 'More filters'}
+                </button>
+
+                {showFilters ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">Category</label>
+                      <Select value={filters.category} onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}>
+                        <option value="">All categories</option>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>{category}</option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">Start date</label>
+                      <Input type="date" value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">End date</label>
+                      <Input type="date" value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">Min amount</label>
+                      <Input type="number" step="0.01" min="0" value={filters.minAmount} onChange={(event) => setFilters((current) => ({ ...current, minAmount: event.target.value }))} />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs text-[var(--muted)] font-medium">Max amount</label>
+                      <Input type="number" step="0.01" min="0" value={filters.maxAmount} onChange={(event) => setFilters((current) => ({ ...current, maxAmount: event.target.value }))} />
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {visibleExpenses.length === 0 ? (
-          <EmptyState title="No expenses match these filters." description="Clear the filters or add a new record to get started." actionLabel="Reset form" onAction={resetForm} />
-        ) : (
-          <div className="expense-table">
-            <div className="expense-table-head">
-              <span>Title</span>
-              <span>Category</span>
-              <span>Date</span>
-              <span>Amount</span>
-              <span />
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-0">
+              <span className="text-xs uppercase tracking-[0.15em] text-[var(--accent)] font-semibold">List</span>
+              <CardTitle>Recent expenses</CardTitle>
             </div>
-            {visibleExpenses.map((expense) => (
-              <div key={expense.id} className="expense-table-row">
-                <div>
-                  <strong>{expense.title || 'Expense'}</strong>
-                  <span>{expense.notes || 'No notes'}</span>
-                </div>
-                <span>{expense.category}</span>
-                <span>{formatDate(expense.date || expense.transaction_date)}</span>
-                <strong>{formatCurrency(expense.amount)}</strong>
-                <div className="row-actions">
-                  <button type="button" className="text-button" onClick={() => startEdit(expense)}>Edit</button>
-                  <button type="button" className="text-button danger" onClick={() => removeExpenseItem(expense.id)}>Delete</button>
-                </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {visibleExpenses.length === 0 ? (
+              <div className="p-6">
+                <EmptyState title="No expenses match these filters." description="Clear the filters or add a new record to get started." actionLabel="Reset form" onAction={resetForm} />
               </div>
-            ))}
-          </div>
-        )}
-      </Card>
-    </div>
+            ) : (
+              <div className="flex flex-col">
+                <div className="hidden lg:grid lg:grid-cols-5 gap-4 px-6 py-3 text-xs text-[var(--muted)] uppercase tracking-wider font-semibold">
+                  <span>Title</span>
+                  <span>Category</span>
+                  <span>Date</span>
+                  <span>Amount</span>
+                  <span />
+                </div>
+                {visibleExpenses.map((expense) => (
+                  <div key={expense.id} className="grid grid-cols-1 lg:grid-cols-5 gap-2 lg:gap-4 items-center px-6 py-3 border-b border-[var(--border)] last:border-0">
+                    <div>
+                      <strong className="text-sm">{expense.title || 'Expense'}</strong>
+                      <p className="text-xs text-[var(--muted)]">{expense.notes || 'No notes'}</p>
+                    </div>
+                    <span className="text-sm">{expense.category}</span>
+                    <span className="text-sm text-[var(--muted)]">{formatDate(expense.date || expense.transaction_date)}</span>
+                    <strong className="text-sm font-mono">{formatCurrency(expense.amount)}</strong>
+                    <div className="flex items-center gap-2 justify-end">
+                      <Button variant="ghost" size="sm" onClick={() => startEdit(expense)}>Edit</Button>
+                      <Button variant="danger" size="sm" onClick={() => removeExpenseItem(expense.id)}>Delete</Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </PageContainer>
   )
 }

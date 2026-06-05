@@ -8,9 +8,9 @@ function DonutTooltip({ active, payload }) {
   if (!active || !payload?.length) return null
   const d = payload[0].payload
   return (
-    <div className="chart-tooltip">
-      <div className="chart-tooltip-label">{d.category}</div>
-      <div className="chart-tooltip-value">{formatCurrency(d.total)} ({d.percent}%)</div>
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
+      <div className="font-semibold mb-1">{d.category}</div>
+      <div className="font-mono font-bold">{formatCurrency(d.total)} ({d.percent}%)</div>
     </div>
   )
 }
@@ -19,8 +19,8 @@ const ChartDonut = memo(function ChartDonut({ data, innerRadius = 75 }) {
   if (!data?.length) return null
 
   return (
-    <div className="chart-container chart-donut-wrap">
-      <ResponsiveContainer width="100%" height={280}>
+    <div className="flex items-center justify-center" style={{ height: 280 }}>
+      <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
