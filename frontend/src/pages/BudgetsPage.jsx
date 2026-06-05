@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/common/PageHeader'
 import { Badge } from '../components/common/Badge'
@@ -333,6 +333,31 @@ export default function BudgetsPage() {
 
   const categoryList = getCategoryStrings(categories)
 
+  const { totalBudgeted, totalSpent, budgetCount, budgetUtilization } = useMemo(() => {
+    let spent = 0; let limit = 0
+    budgets.forEach((b) => {
+      spent += Number(b.current_spend || 0)
+      limit += Number(b.monthly_limit || 0)
+    })
+    return {
+      totalBudgeted: limit,
+      totalSpent: spent,
+      budgetCount: budgets.length,
+      budgetUtilization: limit > 0 ? Math.round((spent / limit) * 100) : 0,
+    }
+  }, [budgets])
+
+  const activeGoals = useMemo(() => {
+    const completed = []
+    const active = []
+    goals.forEach((g) => {
+      const pct = Number(g.target_amount) > 0 ? (Number(g.current_amount || 0) / Number(g.target_amount)) * 100 : 0
+      if (pct >= 100) completed.push(g)
+      else active.push(g)
+    })
+    return { active, completed }
+  }, [goals])
+
   const handleCreate = async (cat, limit) => {
     await createBudget(cat, limit)
     setShowForm(false)
@@ -444,15 +469,31 @@ export default function BudgetsPage() {
       {budgets.length === 0 && !showForm ? (
         <Card className="placeholder-panel">
           <p className="panel-copy">
-            No budgets yet. Create your first budget to start tracking spending limits.
+            Create a budget to start tracking spending targets and improve your Financial Health score.
           </p>
         </Card>
       ) : (
-        <div className="budgets-grid">
-          {budgets.map((budget) => (
-            <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete} />
-          ))}
-        </div>
+        <>
+          <div className="budget-summary-strip">
+            <div className="budget-summary-stat">
+              <span className="typo-metric-value">{formatCurrency(totalSpent)}</span>
+              <span className="typo-metadata">Spent of {formatCurrency(totalBudgeted)}</span>
+            </div>
+            <div className="budget-summary-stat">
+              <span className="typo-metric-value">{budgetUtilization}%</span>
+              <span className="typo-metadata">Overall utilization</span>
+            </div>
+            <div className="budget-summary-stat">
+              <span className="typo-metric-value">{budgetCount}</span>
+              <span className="typo-metadata">Active budgets</span>
+            </div>
+          </div>
+          <div className="budgets-grid">
+            {budgets.map((budget) => (
+              <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete} />
+            ))}
+          </div>
+        </>
       )}
 
       <hr className="section-divider" />
@@ -460,7 +501,7 @@ export default function BudgetsPage() {
       <div className="section-header-wrap">
         <div className="section-header">
           <h2 className="section-title">Goals</h2>
-          <p className="section-desc">Track progress towards your financial targets.</p>
+          <p className="section-desc">Set savings targets and track your progress.</p>
         </div>
         <Button onClick={() => { setShowGoalForm(true); setEditingGoal(null); setFundingGoal(null) }}>
           New goal
@@ -491,15 +532,38 @@ export default function BudgetsPage() {
       {goals.length === 0 && !showGoalForm ? (
         <Card className="placeholder-panel">
           <p className="panel-copy">
-            No goals yet. Create your first goal to start tracking financial targets.
+            Set a savings goal to improve your Financial Health score and track progress toward your financial targets.
           </p>
         </Card>
       ) : (
-        <div className="budgets-grid">
-          {goals.map((goal) => (
-            <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
-          ))}
-        </div>
+        <>
+          {activeGoals.active.length > 0 && (
+            <>
+              <div className="section-subtitle">
+                <h3 className="typo-description" style={{ fontWeight: 700, margin: 0 }}>Active</h3>
+              </div>
+              <div className="budgets-grid">
+                {activeGoals.active.map((goal) => (
+                  <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
+                ))}
+              </div>
+            </>
+          )}
+          {activeGoals.completed.length > 0 && (
+            <details className="completed-section">
+              <summary className="completed-summary">
+                <span className="typo-description" style={{ fontWeight: 600 }}>
+                  Completed goals ({activeGoals.completed.length})
+                </span>
+              </summary>
+              <div className="budgets-grid" style={{ marginTop: 'var(--space-4)' }}>
+                {activeGoals.completed.map((goal) => (
+                  <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
+                ))}
+              </div>
+            </details>
+          )}
+        </>
       )}
     </div>
   )

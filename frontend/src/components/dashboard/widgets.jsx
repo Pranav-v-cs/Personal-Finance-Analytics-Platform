@@ -124,7 +124,7 @@ export const WidgetTrend = memo(function WidgetTrend({ monthSeries, formatCurren
 })
 
 export const WidgetCategoryIntelligence = memo(function WidgetCategoryIntelligence({ categories, formatCurrency }) {
-  if (categories.length === 0) return <p className="empty-inline">No categories yet.</p>
+  if (categories.length === 0) return <p className="empty-inline">Add expenses in different categories to see your spending breakdown.</p>
   return (
     <div className="category-rank">
       {categories.slice(0, 5).map((row, idx) => {
@@ -204,7 +204,7 @@ export const WidgetBudgetSummary = memo(function WidgetBudgetSummary({ budgets, 
 })
 
 export const WidgetGoalProgress = memo(function WidgetGoalProgress({ goals, formatCurrency, navigate }) {
-  if (goals.length === 0) return <p className="empty-inline">No goals yet. Create financial targets to track progress.</p>
+  if (goals.length === 0) return <p className="empty-inline">Set a savings goal to track progress toward your financial targets.</p>
   return (
     <div className="goal-summary">
       {goals.slice(0, 4).map((goal) => {

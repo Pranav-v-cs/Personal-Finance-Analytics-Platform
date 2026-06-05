@@ -1470,6 +1470,44 @@ button:disabled {
   color: #ef5350;
 }
 
+.budget-summary-strip {
+  display: flex;
+  gap: var(--widget-gap);
+  flex-wrap: wrap;
+}
+
+.budget-summary-stat {
+  display: grid;
+  gap: 0.2rem;
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  flex: 1;
+  min-width: 140px;
+}
+
+.completed-section {
+  margin-top: var(--space-4);
+}
+
+.completed-summary {
+  cursor: pointer;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  user-select: none;
+}
+
+.completed-summary:hover {
+  border-color: var(--accent);
+}
+
+.completed-summary::-webkit-details-marker {
+  display: none;
+}
+
 .budget-bar-track {
   height: 0.5rem;
   border-radius: 999px;

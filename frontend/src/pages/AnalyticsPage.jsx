@@ -191,7 +191,7 @@ export default function AnalyticsPage() {
             {stackedData.length ? (
               <ChartStacked data={stackedData} categories={stackedCategories} />
             ) : (
-              <p className="empty-inline">No category data available yet.</p>
+              <p className="empty-inline">Add expenses in different categories to see how your spending breaks down over time.</p>
             )}
           </Card>
         </div>
