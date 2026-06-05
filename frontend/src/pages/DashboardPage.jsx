@@ -25,7 +25,9 @@ function DashboardSkeleton() {
         <SkeletonLine className="w-32" />
         <SkeletonLine className="w-48" />
       </Card>
-      <div className="stats-grid stats-grid-compact">
+      <div className="stats-grid">
+        <Skeleton className="stat-card" />
+        <Skeleton className="stat-card" />
         <Skeleton className="stat-card" />
         <Skeleton className="stat-card" />
       </div>
@@ -63,9 +65,7 @@ export default function DashboardPage() {
     )
   }
 
-  const topCategory = summary?.topCategory || summary?.top_category || null
   const monthSeries = monthly.length ? monthly : []
-  const thisMonthTotal = monthSeries.length > 0 ? monthSeries[monthSeries.length - 1].total_amount ?? 0 : 0
   const hasExpenses = metrics.expenseCount > 0
 
   const handleQuickAdd = async (values) => {
@@ -110,11 +110,19 @@ export default function DashboardPage() {
                   <div className="health-score-display">
                     <span className={`health-score-value score-${health.label.toLowerCase().replace(/\s+/g, '-')}`}>{health.score}</span>
                     <span className="health-score-label">{health.label}</span>
+                    {health.scoreChange !== null && health.scoreChange !== 0 && (
+                      <span className={`delta-badge ${health.scoreChange > 0 ? 'delta-success' : 'delta-danger'}`}>
+                        {health.scoreChange > 0 ? '▲' : '▼'} {Math.abs(health.scoreChange)} pts
+                      </span>
+                    )}
                   </div>
                   <div className="health-hero-text">
                     <div className="eyebrow">Financial Health</div>
                     <h2>Wellness score</h2>
                     <p className="health-score-desc">{health.recommendation}</p>
+                    {health.actionRecommendation && (
+                      <p className="health-action">{health.actionRecommendation}</p>
+                    )}
                   </div>
                 </>
               ) : (
@@ -127,6 +135,9 @@ export default function DashboardPage() {
                     <div className="eyebrow">Financial Health</div>
                     <h2>Wellness score</h2>
                     <p className="health-score-desc">{health.recommendation}</p>
+                    {health.actionRecommendation && (
+                      <p className="health-action">{health.actionRecommendation}</p>
+                    )}
                   </div>
                 </>
               )}
@@ -147,18 +158,16 @@ export default function DashboardPage() {
             </div>
           )}
 
-          <div className="stats-grid stats-grid-compact">
+          <div className="stats-grid">
+            <StatCard label="Total spending" value={formatCurrency(metrics.totalExpenses)} helper="All-time spend" />
             <StatCard
-              label="This month"
-              value={formatCurrency(thisMonthTotal)}
-              helper={monthSeries.length >= 2 ? monthSeries[monthSeries.length - 1]?.month || 'Current period' : 'Current period'}
+              label="Monthly change"
+              value={metrics.momChangePercent !== 0 ? `${metrics.momChangePercent > 0 ? '+' : ''}${metrics.momChangePercent.toFixed(1)}%` : '0%'}
+              helper="Compared to last month"
               badge={metrics.momChangePercent !== 0 ? <DeltaBadge value={metrics.momChangePercent} /> : null}
             />
-            <StatCard
-              label="Top category"
-              value={topCategory?.category || 'None'}
-              helper={topCategory ? `${topCategory.percent?.toFixed(0) || 0}% of spend` : 'No data'}
-            />
+            <StatCard label="Avg daily spend" value={formatCurrency(metrics.avgDailySpend)} helper="Across tracked period" />
+            <StatCard label="Expense count" value={String(metrics.expenseCount)} helper="Total transactions" />
           </div>
 
           <div className="dashboard-grid">
