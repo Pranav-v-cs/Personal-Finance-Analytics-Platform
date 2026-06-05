@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Badge } from '../components/common/Badge'
 import { ChartBars } from '../components/common/ChartBars'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
@@ -80,15 +79,13 @@ export default function DashboardPage() {
 
   return (
     <div className="dashboard-stack">
-      <QuickAdd isMobile={true} className="mb-6" />
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial snapshot"
         description="A concise view of spend, concentration, and recent activity."
         actions={
           <>
-            <Button onClick={() => navigate('/expenses')}>All expenses</Button>
-            <Badge tone="info">Last refreshed now</Badge>
+            <Button onClick={() => navigate('/expenses')}>All transactions</Button>
           </>
         }
       />

@@ -4,7 +4,6 @@ import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
 import { PageHeader } from '../components/common/PageHeader'
 import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
-import { QuickAdd } from '../components/QuickAdd'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Input, Select, Textarea } from '../components/ui/Input'
@@ -103,10 +102,6 @@ export default function ExpensesPage() {
         />
 
         <InlineError message={error} />
-
-        <Card className="expenses-panel quick-add-panel">
-          <QuickAdd categories={categories} onSubmit={createExpenseItem} saving={saving} />
-        </Card>
 
         <div className="expenses-grid">
           <Card className="expenses-panel">
