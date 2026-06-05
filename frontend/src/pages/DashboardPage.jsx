@@ -40,12 +40,12 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { summary, monthly, recent, categories, budgets, loading, error, refresh } = useDashboard()
+  const { summary, monthly, recent, categories, budgets, goals, loading, error, refresh } = useDashboard()
   const { navigate } = useRouter()
   const [quickAddSaving, setQuickAddSaving] = useState(false)
   const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
-  const health = useFinancialHealth({ summary, monthly })
+  const health = useFinancialHealth({ summary, monthly, budgets, goals })
 
   if (loading) {
     return (
@@ -152,6 +152,32 @@ export default function DashboardPage() {
                     )}
                   </div>
                 </>
+              )}
+              {health.metrics && (
+                <div className="health-metrics">
+                  <div className="health-metric">
+                    <span className="health-metric-label">Spending</span>
+                    <div className="health-metric-bar">
+                      <div className="health-metric-fill" style={{ width: `${health.metrics.spendingScore}%`, background: health.metrics.spendingScore >= 70 ? '#66bb6a' : health.metrics.spendingScore >= 50 ? '#f7b14a' : '#ef5350' }} />
+                    </div>
+                  </div>
+                  {health.metrics.budgetScore !== null && (
+                    <div className="health-metric">
+                      <span className="health-metric-label">Budget</span>
+                      <div className="health-metric-bar">
+                        <div className="health-metric-fill" style={{ width: `${health.metrics.budgetScore}%`, background: health.metrics.budgetScore >= 70 ? '#66bb6a' : health.metrics.budgetScore >= 50 ? '#f7b14a' : '#ef5350' }} />
+                      </div>
+                    </div>
+                  )}
+                  {health.metrics.goalScore !== null && (
+                    <div className="health-metric">
+                      <span className="health-metric-label">Goals</span>
+                      <div className="health-metric-bar">
+                        <div className="health-metric-fill" style={{ width: `${health.metrics.goalScore}%`, background: health.metrics.goalScore >= 70 ? '#66bb6a' : health.metrics.goalScore >= 50 ? '#f7b14a' : '#ef5350' }} />
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </Card>
