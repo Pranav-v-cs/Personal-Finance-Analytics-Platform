@@ -16,8 +16,9 @@ const ExpensesPage = lazy(() => import('./pages/ExpensesPage'))
 const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage'))
 const BudgetsPage = lazy(() => import('./pages/BudgetsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const AIAssistantPage = lazy(() => import('./pages/AIAssistantPage'))
 
-const protectedRoutes = new Set(['/dashboard', '/expenses', '/analytics', '/budgets', '/settings'])
+const protectedRoutes = new Set(['/dashboard', '/expenses', '/analytics', '/budgets', '/settings', '/assistant'])
 
 function FullScreenLoader() {
   return (
@@ -72,6 +73,7 @@ function AppRoutes() {
   if (pathname === '/analytics') page = <AnalyticsPage />
   if (pathname === '/budgets') page = <BudgetsPage />
   if (pathname === '/settings') page = <SettingsPage />
+  if (pathname === '/assistant') page = <AIAssistantPage />
 
   if (pathname === '/' || pathname === '/auth') {
     return <Suspense fallback={<FullScreenLoader />}>{page}</Suspense>

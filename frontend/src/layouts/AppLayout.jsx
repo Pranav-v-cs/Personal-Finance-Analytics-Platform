@@ -1,4 +1,3 @@
-import { Badge } from '../components/ui/Badge'
 import { Button } from '../components/ui/Button'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
@@ -9,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'Transactions', path: '/expenses' },
   { label: 'Analytics', path: '/analytics' },
   { label: 'Budgets', path: '/budgets' },
+  { label: 'Assistant', path: '/assistant' },
   { label: 'Settings', path: '/settings' },
 ]
 
@@ -54,11 +54,6 @@ export function AppLayout({ children }) {
               </button>
             )
           })}
-          <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-(--muted)">
-            <span className="w-1.5 h-1.5 rounded-full bg-(--border)" />
-            <span>AI Assistant</span>
-            <Badge variant="warning" className="ml-auto text-[10px] px-1.5 py-0">Soon</Badge>
-          </div>
         </nav>
 
         <div className="flex flex-col gap-2 pt-4 border-t border-(--border)">

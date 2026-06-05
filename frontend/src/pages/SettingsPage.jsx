@@ -87,7 +87,7 @@ export default function SettingsPage() {
             <CardHeader>
               <div className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">AI</div>
               <CardTitle>AI Provider</CardTitle>
-              <CardDescription>Select your preferred AI provider for future features.</CardDescription>
+              <CardDescription>Select your preferred AI provider for the assistant, insights, and reports.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
               <div className="flex flex-col gap-2">
@@ -110,7 +110,7 @@ export default function SettingsPage() {
                 </div>
               </div>
               <p className="text-xs text-[var(--muted)]">
-                No AI functionality implemented yet. Stores your preference for when AI features arrive.
+                Choose which AI provider powers your assistant, insights, and reports.
               </p>
             </CardContent>
           </Card>
