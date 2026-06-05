@@ -10,6 +10,7 @@ from app.routers.auth import router as auth_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.expenses import router as expenses_router
 from app.routers.goals import router as goals_router
+from app.routers.ai import router as ai_router
 
 Base.metadata.create_all(bind=engine)
 
@@ -29,6 +30,7 @@ app.include_router(dashboard_router)
 app.include_router(categories_router)
 app.include_router(budgets_router)
 app.include_router(goals_router)
+app.include_router(ai_router)
 
 @app.get("/", response_model=MessageResponse)
 def root():
