@@ -6,7 +6,7 @@ import { useRouter } from '../hooks/useRouter'
 
 const NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Expenses', path: '/expenses' },
+  { label: 'Transactions', path: '/expenses' },
   { label: 'Analytics', path: '/analytics' },
   { label: 'Settings', path: '/settings' },
 ]
@@ -51,7 +51,7 @@ export function AppLayout({ children }) {
           })}
           <div className="nav-item nav-item-disabled">
             <span className="nav-dot" aria-hidden="true" />
-            <span className="nav-label">AI Insights</span>
+            <span className="nav-label">AI Assistant</span>
             <Badge tone="warning" className="coming-soon-badge">Coming soon</Badge>
           </div>
         </nav>

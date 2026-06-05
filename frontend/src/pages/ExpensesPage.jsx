@@ -87,7 +87,7 @@ export default function ExpensesPage() {
   if (loading) {
     return (
       <>
-        <PageHeader eyebrow="Expenses" title="Track, filter, and edit expenses" description="Loading your records..." />
+        <PageHeader eyebrow="Transactions" title="Record and manage expenses" description="Loading your records..." />
         <ExpensesSkeleton />
       </>
     )
@@ -96,9 +96,9 @@ export default function ExpensesPage() {
     return (
       <div className="expenses-layout">
         <PageHeader
-          eyebrow="Expenses"
-          title="Track, filter, and edit expenses"
-          description="Use the filters to narrow the list, or keep a working form open while you review recent items."
+          eyebrow="Transactions"
+          title="Record and manage expenses"
+          description="Add new records, browse history, or filter by category, date, or amount."
           actions={<Badge tone="default">{visibleExpenses.length} items</Badge>}
         />
 
