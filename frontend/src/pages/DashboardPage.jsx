@@ -249,6 +249,35 @@ export default function DashboardPage() {
           <Card className="dashboard-panel quick-add-panel">
             <QuickAdd categories={categories} onSubmit={handleQuickAdd} saving={quickAddSaving} />
           </Card>
+
+          <div className="dashboard-grid">
+            <Card className="dashboard-panel placeholder-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="eyebrow">Budget Tracking</div>
+                  <h2>Set spending targets</h2>
+                </div>
+                <span className="badge badge-info">Coming soon</span>
+              </div>
+              <p className="panel-copy">
+                Create monthly budgets for each category and track adherence in real time.
+                Get alerts when you&apos;re close to exceeding your limits.
+              </p>
+            </Card>
+
+            <Card className="dashboard-panel placeholder-panel">
+              <div className="panel-heading">
+                <div>
+                  <div className="eyebrow">AI Financial Assistant</div>
+                  <h2>Ask about your finances</h2>
+                </div>
+                <span className="badge badge-info">Coming soon</span>
+              </div>
+              <p className="panel-copy">
+                Ask questions like: <em>&ldquo;Where did I overspend?&rdquo;</em>, <em>&ldquo;How can I save money?&rdquo;</em>, or <em>&ldquo;Compare this month with last month.&rdquo;</em>
+              </p>
+            </Card>
+          </div>
         </>
       )}
 
