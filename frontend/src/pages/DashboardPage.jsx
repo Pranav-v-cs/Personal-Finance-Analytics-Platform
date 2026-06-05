@@ -40,7 +40,7 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { summary, monthly, recent, categories, loading, error } = useDashboard()
+  const { summary, monthly, recent, categories, loading, error, refresh } = useDashboard()
   const { navigate } = useRouter()
   const [quickAddSaving, setQuickAddSaving] = useState(false)
   const insights = useInsights({ summary, monthly, recent, categories })
@@ -83,10 +83,11 @@ export default function DashboardPage() {
     setQuickAddSaving(true)
     try {
       await createExpense(values)
-      window.location.reload()
+      refresh()
     } catch {
+      // Error feedback is handled by QuickAdd component
+    } finally {
       setQuickAddSaving(false)
-      throw new Error('Failed to save expense')
     }
   }
 

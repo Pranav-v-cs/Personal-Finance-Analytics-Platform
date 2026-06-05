@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   getDashboardCategories,
   getDashboardSummary,
@@ -15,6 +15,11 @@ export function useDashboard() {
     loading: true,
     error: '',
   })
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const refresh = useCallback(() => {
+    setRefreshKey((k) => k + 1)
+  }, [])
 
   useEffect(() => {
     let active = true
@@ -57,7 +62,7 @@ export function useDashboard() {
     return () => {
       active = false
     }
-  }, [])
+  }, [refreshKey])
 
-  return state
+  return { ...state, refresh }
 }
