@@ -3,7 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Card } from '../ui/Card'
 import { WIDGET_DEFS } from '../../config/widgets'
 
-export function DashboardWidget({ id, children, className = '', density, onToggle }) {
+export function DashboardWidget({ id, children, zone, className = '', density, onToggle, size, onResize, sizes }) {
   const def = WIDGET_DEFS[id]
   const {
     attributes,
@@ -23,12 +23,16 @@ export function DashboardWidget({ id, children, className = '', density, onToggl
   const cardClass = [
     'dashboard-widget',
     `widget-${id}`,
+    `widget-size-${size}`,
+    `zone-${zone}`,
     `density-${density}`,
     id === 'financial-health' ? 'health-card health-hero' : '',
     className,
   ]
     .filter(Boolean)
     .join(' ')
+
+  const canResize = sizes && sizes.length > 1
 
   return (
     <div ref={setNodeRef} style={style} className={cardClass}>
@@ -53,16 +57,29 @@ export function DashboardWidget({ id, children, className = '', density, onToggl
                   <h2>{def?.title || id}</h2>
                 </div>
               </div>
-              {!def?.alwaysVisible && onToggle && (
-                <button
-                  type="button"
-                  className="text-button widget-hide-btn"
-                  onClick={() => onToggle(id)}
-                  aria-label={`Hide ${def?.title || id}`}
-                >
-                  Hide
-                </button>
-              )}
+              <div className="widget-header-actions">
+                {canResize && onResize && (
+                  <button
+                    type="button"
+                    className="text-button widget-resize-btn"
+                    onClick={onResize}
+                    aria-label={`Resize ${def?.title || id}`}
+                    title={`Size: ${size}`}
+                  >
+                    {size === 'small' ? '▭' : size === 'medium' ? '◻' : '▢'}
+                  </button>
+                )}
+                {!def?.alwaysVisible && onToggle && (
+                  <button
+                    type="button"
+                    className="text-button widget-hide-btn"
+                    onClick={() => onToggle(id)}
+                    aria-label={`Hide ${def?.title || id}`}
+                  >
+                    Hide
+                  </button>
+                )}
+              </div>
             </div>
             <div className="widget-body">
               {children}

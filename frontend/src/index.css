@@ -13,6 +13,49 @@
   -moz-osx-font-smoothing: grayscale;
   color-scheme: dark;
   --page-padding: clamp(1rem, 2vw, 1.5rem);
+
+  /* ===== Design System — Spacing ===== */
+  --section-gap: 48px;
+  --widget-gap: 24px;
+  --card-padding: 24px;
+  --hero-section-gap: 64px;
+
+  /* ===== Design System — Typography ===== */
+  --typo-hero-size: clamp(2.4rem, 5vw, 3.6rem);
+  --typo-section-size: clamp(1.15rem, 2vw, 1.35rem);
+  --typo-metric-size: clamp(1.3rem, 2.5vw, 1.85rem);
+  --typo-desc-size: 0.9375rem;
+  --typo-meta-size: 0.8125rem;
+}
+
+/* ===== Design System — Typography Utilities ===== */
+.typo-hero {
+  font-size: var(--typo-hero-size);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+}
+.typo-section-title {
+  font-size: var(--typo-section-size);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.typo-metric-value {
+  font-size: var(--typo-metric-size);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.15;
+}
+.typo-description {
+  font-size: var(--typo-desc-size);
+  color: var(--muted);
+  line-height: 1.5;
+}
+.typo-metadata {
+  font-size: var(--typo-meta-size);
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 html[data-theme='light'] {
@@ -334,7 +377,13 @@ button:disabled {
 }
 
 .card {
-  padding: var(--space-4) var(--space-6);
+  padding: var(--card-padding);
+}
+
+@media (max-width: 767px) {
+  .card {
+    padding: 16px;
+  }
 }
 
 .input,
@@ -442,7 +491,7 @@ button:disabled {
   align-items: end;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .page-header-copy,
@@ -466,7 +515,19 @@ button:disabled {
 .settings-grid,
 .summary-grid {
   display: grid;
-  gap: var(--space-6);
+  gap: var(--widget-gap);
+}
+@media (max-width: 767px) {
+  .stats-grid,
+  .feature-grid,
+  .preview-grid,
+  .analytics-grid,
+  .dashboard-grid,
+  .expenses-grid,
+  .settings-grid,
+  .summary-grid {
+    gap: var(--space-4);
+  }
 }
 
 .stats-grid {
@@ -513,7 +574,7 @@ button:disabled {
 .expenses-layout,
 .settings-stack {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--section-gap);
 }
 
 .panel-heading {
@@ -1597,6 +1658,460 @@ button:disabled {
   margin: 0;
 }
 
+/* ===== Bento Dashboard Layout ===== */
+.bento-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--section-gap);
+}
+
+.bento-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.zone-label {
+  margin-bottom: var(--space-1);
+}
+
+.zone-widgets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--widget-gap);
+}
+
+/* Hero zone — 2-column bento */
+.bento-zone-hero .zone-widgets {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--widget-gap);
+}
+
+.bento-zone-hero .zone-widgets .widget-financial-health {
+  grid-row: 1 / 3;
+}
+
+.bento-zone-hero .zone-widgets .widget-financial-health .dashboard-panel {
+  height: 100%;
+}
+
+/* Insights zone — full width, 3 inline cards */
+.bento-zone-insights .zone-widgets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--widget-gap);
+}
+
+/* Analytics zone — 2-column grid */
+.bento-zone-analytics .zone-widgets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--widget-gap);
+}
+
+.bento-zone-analytics .widget-size-large {
+  grid-column: 1 / -1;
+}
+
+/* Future zone — 2-column grid */
+.bento-zone-future .zone-widgets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--widget-gap);
+}
+
+/* Utility zone */
+.bento-zone-utility .zone-widgets {
+  max-width: 400px;
+}
+
+/* ===== Widget System ===== */
+.dashboard-widget {
+  transition: opacity 0.2s ease;
+}
+
+.widget-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: var(--space-3);
+}
+
+.widget-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.widget-header-left h2 {
+  margin: 0.1rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.widget-header-left .eyebrow {
+  line-height: 1.2;
+}
+
+.widget-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.widget-drag-handle {
+  cursor: grab;
+  background: none;
+  border: none;
+  padding: 0.2rem;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  touch-action: none;
+}
+
+.widget-drag-handle:active {
+  cursor: grabbing;
+}
+
+.widget-drag-handle-placeholder {
+  width: 1.5rem;
+  display: inline-block;
+}
+
+.widget-body {
+  min-height: 2rem;
+}
+
+.widget-resize-btn {
+  font-size: 1.1rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+
+.widget-resize-btn:hover {
+  opacity: 1;
+}
+
+/* Size variants */
+.widget-size-small .widget-body {
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.widget-size-large .widget-body {
+  min-height: 200px;
+}
+
+.density-compact .widget-header {
+  margin-bottom: var(--space-2);
+}
+
+.density-compact .widget-header-left h2 {
+  font-size: 0.95rem;
+}
+
+.density-compact .dashboard-widget .dashboard-panel {
+  padding: 16px;
+}
+
+.density-compact .bento-zone,
+.density-compact .bento-grid {
+  gap: var(--space-4);
+}
+
+/* Loading state */
+.bento-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--widget-gap);
+}
+
+/* ===== Customize Drawer ===== */
+.customize-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 380px;
+  height: 100vh;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: -8px 0 40px var(--shadow);
+}
+
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 99;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--card-padding);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.drawer-header h2 {
+  margin: 0;
+}
+
+.drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.drawer-section h3 {
+  margin: 0 0 var(--space-2);
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.drawer-hint {
+  margin: 0 0 var(--space-3);
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.drawer-footer {
+  padding: var(--card-padding);
+  border-top: 1px solid var(--border);
+}
+
+/* Preset cards */
+.preset-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.preset-card {
+  text-align: left;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.preset-card:hover {
+  border-color: var(--accent);
+  background: rgba(124, 116, 232, 0.06);
+}
+
+.preset-card.preset-active {
+  border-color: var(--accent);
+  background: rgba(124, 116, 232, 0.1);
+}
+
+.preset-card-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  margin-bottom: 0.2rem;
+}
+
+.preset-card-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Widget toggles */
+.widget-toggle-list {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.widget-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  cursor: pointer;
+}
+
+.widget-toggle-info {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.widget-toggle-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.widget-toggle-group {
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  flex-shrink: 0;
+}
+
+.toggle-on {
+  background: var(--accent);
+}
+
+.toggle-off {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: white;
+  transition: transform 0.2s ease;
+}
+
+.toggle-on .toggle-knob {
+  transform: translateX(20px);
+}
+
+/* Density buttons */
+.density-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.density-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.density-btn:hover {
+  border-color: var(--accent);
+}
+
+.density-btn.density-active {
+  border-color: var(--accent);
+  background: rgba(124, 116, 232, 0.1);
+}
+
+.density-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+/* ===== Settings additions ===== */
+.setting-group {
+  margin-top: var(--space-4);
+}
+
+.setting-label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+
+.preset-inline-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.preset-chip {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.preset-chip:hover {
+  border-color: var(--accent);
+}
+
+.preset-chip.preset-chip-active {
+  border-color: var(--accent);
+  background: rgba(124, 116, 232, 0.12);
+  color: var(--accent);
+}
+
+.ai-provider-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.account-box {
+  display: grid;
+  gap: 0.2rem;
+  margin-bottom: var(--space-3);
+}
+
+/* ===== Recommendations ===== */
+.recommendation-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.recommendation-item {
+  padding: var(--space-2) var(--space-3);
+  background: rgba(124, 116, 232, 0.06);
+  border: 1px solid rgba(124, 116, 232, 0.15);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--accent);
+}
+
 .trend-narrative {
   margin: var(--space-4) 0 0;
   padding: var(--space-3);
@@ -2074,26 +2589,26 @@ button:disabled {
   }
 }
 
-/* Recommendations */
-.recommendation-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  gap: var(--space-2);
+/* ===== Responsive — Bento & Widget System ===== */
+@media (max-width: 1023px) {
+  .bento-zone-hero .zone-widgets {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .bento-zone-hero .zone-widgets .widget-financial-health {
+    grid-row: auto;
+  }
+
+  .bento-zone-analytics .zone-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-zone-future .zone-widgets {
+    grid-template-columns: 1fr;
+  }
 }
 
-.recommendation-item {
-  padding: var(--space-2) var(--space-3);
-  background: rgba(124, 116, 232, 0.06);
-  border: 1px solid rgba(124, 116, 232, 0.15);
-  border-radius: var(--radius-md);
-  font-size: 0.85rem;
-  line-height: 1.4;
-  color: var(--accent);
-}
-
-/* ===== Widget System Mobile ===== */
 @media (max-width: 767px) {
   .preset-grid {
     grid-template-columns: 1fr;
@@ -2108,13 +2623,28 @@ button:disabled {
     border-left: none;
   }
 
-  .dashboard-header-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .widget-header-left h2 {
     font-size: 0.95rem;
+  }
+
+  .bento-zone-hero .zone-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-zone-analytics .zone-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-zone-insights .zone-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-zone-future .zone-widgets {
+    grid-template-columns: 1fr;
+  }
+
+  .bento-zone-utility .zone-widgets {
+    max-width: 100%;
   }
 }
 

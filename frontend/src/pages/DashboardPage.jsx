@@ -27,6 +27,7 @@ import { useInsights } from '../hooks/useInsights'
 import { useSpendingMetrics } from '../hooks/useSpendingMetrics'
 import { useRouter } from '../hooks/useRouter'
 import { useDashboardLayout } from '../hooks/useDashboardLayout'
+import { WIDGET_DEFS } from '../config/widgets'
 import { DashboardWidget, WidgetSkeleton } from '../components/dashboard/DashboardWidget'
 import { CustomizeDrawer } from '../components/dashboard/CustomizeDrawer'
 import {
@@ -53,39 +54,70 @@ const WIDGET_COMPONENTS = {
   'ai-assistant': WidgetAIAssistant,
 }
 
-function DashboardSkeleton() {
-  return (
-    <div className="dashboard-stack">
-      <WidgetSkeleton />
-      <WidgetSkeleton />
-      <WidgetSkeleton />
-    </div>
-  )
-}
-
-function getWidgetProps(id, { insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate, formatCurrency }) {
+function getWidgetProps(id, ctx) {
   switch (id) {
     case 'financial-health':
-      return { health }
+      return { health: ctx.health }
     case 'insights':
-      return { insights }
+      return { insights: ctx.insights }
     case 'metrics':
-      return { metrics, formatCurrency }
+      return { metrics: ctx.metrics, formatCurrency: ctx.formatCurrency }
     case 'trend':
-      return { monthSeries, formatCurrency, trendNarrative, DeltaBadge, metrics }
+      return { monthSeries: ctx.monthSeries, formatCurrency: ctx.formatCurrency, trendNarrative: ctx.trendNarrative, DeltaBadge, metrics: ctx.metrics }
     case 'category-intelligence':
-      return { categories, formatCurrency }
+      return { categories: ctx.categories, formatCurrency: ctx.formatCurrency }
     case 'budget-summary':
-      return { budgets, formatCurrency, navigate }
+      return { budgets: ctx.budgets, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
     case 'goal-progress':
-      return { goals, formatCurrency, navigate }
+      return { goals: ctx.goals, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
     case 'quick-add':
-      return { categories, onSubmit: handleQuickAdd, saving: quickAddSaving }
+      return { categories: ctx.categories, onSubmit: ctx.handleQuickAdd, saving: ctx.quickAddSaving }
     case 'ai-assistant':
       return {}
     default:
       return {}
   }
+}
+
+function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
+  if (!widgetIds || widgetIds.length === 0) return null
+
+  const zoneClass = `bento-zone bento-zone-${zone}`
+
+  return (
+    <section className={zoneClass}>
+      {label && (
+        <div className="zone-label">
+          <h2 className="typo-section-title">{label}</h2>
+        </div>
+      )}
+      <SortableContext items={widgetIds} strategy={verticalListSortingStrategy}>
+        <div className="zone-widgets">
+          {widgetIds.map((widgetId) => {
+            const Widget = WIDGET_COMPONENTS[widgetId]
+            if (!Widget) return null
+            const props = getWidgetProps(widgetId, sharedProps)
+            const size = layout.getWidgetSize(widgetId)
+            const def = WIDGET_DEFS[widgetId]
+            return (
+              <DashboardWidget
+                key={widgetId}
+                id={widgetId}
+                zone={zone}
+                density={layout.density}
+                onToggle={layout.toggleWidget}
+                size={size}
+                onResize={() => layout.cycleWidgetSize(widgetId)}
+                sizes={def?.sizes}
+              >
+                <Widget {...props} />
+              </DashboardWidget>
+            )
+          })}
+        </div>
+      </SortableContext>
+    </section>
+  )
 }
 
 export default function DashboardPage() {
@@ -101,16 +133,6 @@ export default function DashboardPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
-  )
-
-  const handleDragEnd = useCallback(
-    (event) => {
-      const { active, over } = event
-      if (active.id !== over.id) {
-        layout.reorder(active.id, over.id)
-      }
-    },
-    [layout],
   )
 
   const monthSeries = monthly.length ? monthly : []
@@ -133,42 +155,36 @@ export default function DashboardPage() {
       await createExpense(values)
       refresh()
     } catch {
-      // Error feedback is handled by QuickAdd component
+      /* Error feedback is handled by QuickAdd component */
     } finally {
       setQuickAddSaving(false)
     }
   }, [refresh])
 
   const sharedProps = useMemo(() => ({
-    insights,
-    metrics,
-    health,
-    monthSeries,
-    trendNarrative,
-    categories,
-    budgets,
-    goals,
-    handleQuickAdd,
-    quickAddSaving,
-    navigate,
-    formatCurrency,
+    insights, metrics, health, monthSeries, trendNarrative,
+    categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate, formatCurrency,
   }), [insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate])
 
   if (loading) {
     return (
-      <>
+      <div className="dashboard-stack">
         <PageHeader eyebrow="Dashboard" title="Your financial snapshot" description="Loading insights..." />
-        <DashboardSkeleton />
-      </>
+        <div className="bento-loading">
+          <WidgetSkeleton />
+          <WidgetSkeleton />
+          <WidgetSkeleton />
+        </div>
+      </div>
     )
   }
 
   if (error) {
     return (
-      <>
+      <div className="dashboard-stack">
         <PageHeader eyebrow="Dashboard" title="Your financial snapshot" description="A quick read on spending." />
         <InlineError message={error} />
-      </>
+      </div>
     )
   }
 
@@ -179,7 +195,7 @@ export default function DashboardPage() {
         title="Your financial snapshot"
         description="Your financial health, key metrics, and spending trends."
         actions={
-          <div className="dashboard-header-actions">
+          <div className="page-header-actions">
             <Button variant="ghost" onClick={() => setDrawerOpen(true)}>
               Customize
             </Button>
@@ -201,31 +217,54 @@ export default function DashboardPage() {
         <DndContext
           sensors={sensors}
           collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
+          onDragEnd={(event) => {
+            const { active, over } = event
+            if (active.id !== over.id) {
+              const zone = layout.zones && Object.entries(layout.zones).find(
+                ([, ids]) => ids.includes(active.id)
+              )?.[0]
+              if (zone) layout.reorder(zone, active.id, over.id)
+            }
+          }}
           modifiers={[restrictToVerticalAxis]}
         >
-          <SortableContext
-            items={layout.visibleWidgets}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="widgets-container">
-              {layout.visibleWidgets.map((widgetId) => {
-                const Widget = WIDGET_COMPONENTS[widgetId]
-                if (!Widget) return null
-                const props = getWidgetProps(widgetId, sharedProps)
-                return (
-                  <DashboardWidget
-                    key={widgetId}
-                    id={widgetId}
-                    density={layout.density}
-                    onToggle={layout.toggleWidget}
-                  >
-                    <Widget {...props} />
-                  </DashboardWidget>
-                )
-              })}
-            </div>
-          </SortableContext>
+          <div className="bento-grid">
+            <ZoneSection
+              zone="hero"
+              label=""
+              widgetIds={layout.zones?.hero || []}
+              layout={layout}
+              sharedProps={sharedProps}
+            />
+            <ZoneSection
+              zone="insights"
+              label="Insights"
+              widgetIds={layout.zones?.insights || []}
+              layout={layout}
+              sharedProps={sharedProps}
+            />
+            <ZoneSection
+              zone="analytics"
+              label="Analytics"
+              widgetIds={layout.zones?.analytics || []}
+              layout={layout}
+              sharedProps={sharedProps}
+            />
+            <ZoneSection
+              zone="utility"
+              label=""
+              widgetIds={layout.zones?.utility || []}
+              layout={layout}
+              sharedProps={sharedProps}
+            />
+            <ZoneSection
+              zone="future"
+              label="Coming Soon"
+              widgetIds={layout.zones?.future || []}
+              layout={layout}
+              sharedProps={sharedProps}
+            />
+          </div>
         </DndContext>
       )}
 

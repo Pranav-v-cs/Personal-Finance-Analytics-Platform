@@ -1,14 +1,16 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { WIDGET_DEFS, WIDGET_IDS, PRESETS } from '../config/widgets'
+import { WIDGET_DEFS, WIDGET_IDS, PRESETS, ZONES } from '../config/widgets'
 
 const STORAGE_KEY = 'dashboard_layout'
+
+const DEFAULT_AI_PROVIDER = 'openai'
 
 function loadLayout() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) return JSON.parse(raw)
   } catch {
-    // ignore
+    /* ignore */
   }
   return null
 }
@@ -17,17 +19,28 @@ function saveLayout(layout) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(layout))
   } catch {
-    // ignore
+    /* ignore */
   }
 }
 
 function getDefaultLayout() {
   return {
     preset: 'default',
-    widgetOrder: [...PRESETS.default.order],
+    zones: { ...PRESETS.default.zones },
     hiddenWidgets: [],
+    widgetSizes: {},
     density: 'comfortable',
+    aiProvider: DEFAULT_AI_PROVIDER,
+    theme: 'dark',
   }
+}
+
+function cloneZoneWidgets(zones) {
+  const result = {}
+  for (const zone of ZONES) {
+    result[zone] = [...(zones[zone] || [])]
+  }
+  return result
 }
 
 export function useDashboardLayout() {
@@ -42,11 +55,18 @@ export function useDashboardLayout() {
     saveLayout(next)
   }, [])
 
-  const visibleWidgets = useMemo(() => {
-    return layout.widgetOrder.filter(
-      (id) => WIDGET_IDS.includes(id) && !layout.hiddenWidgets.includes(id)
-    )
-  }, [layout.widgetOrder, layout.hiddenWidgets])
+  const allVisibleWidgets = useMemo(() => {
+    const ids = []
+    for (const zone of ZONES) {
+      const zoneIds = layout.zones[zone] || []
+      for (const id of zoneIds) {
+        if (WIDGET_IDS.includes(id) && !layout.hiddenWidgets.includes(id)) {
+          ids.push(id)
+        }
+      }
+    }
+    return ids
+  }, [layout.zones, layout.hiddenWidgets])
 
   const hiddenWidgetsData = useMemo(() => {
     return layout.hiddenWidgets
@@ -55,16 +75,49 @@ export function useDashboardLayout() {
       .filter(Boolean)
   }, [layout.hiddenWidgets])
 
+  const getWidgetSize = useCallback(
+    (id) => {
+      const def = WIDGET_DEFS[id]
+      if (!def) return 'medium'
+      return layout.widgetSizes[id] || def.defaultSize || 'medium'
+    },
+    [layout.widgetSizes],
+  )
+
+  const setWidgetSize = useCallback(
+    (id, size) => {
+      const def = WIDGET_DEFS[id]
+      if (!def || !def.sizes.includes(size)) return
+      const sizes = { ...ref.current.widgetSizes, [id]: size }
+      persist({ ...ref.current, widgetSizes: sizes })
+    },
+    [persist],
+  )
+
+  const cycleWidgetSize = useCallback(
+    (id) => {
+      const def = WIDGET_DEFS[id]
+      if (!def || def.sizes.length <= 1) return
+      const current = ref.current.widgetSizes[id] || def.defaultSize
+      const idx = def.sizes.indexOf(current)
+      const next = def.sizes[(idx + 1) % def.sizes.length]
+      const sizes = { ...ref.current.widgetSizes, [id]: next }
+      persist({ ...ref.current, widgetSizes: sizes })
+    },
+    [persist],
+  )
+
   const reorder = useCallback(
-    (activeId, overId) => {
-      if (!activeId || !overId || activeId === overId) return
-      const order = [...ref.current.widgetOrder]
-      const oldIndex = order.indexOf(activeId)
-      const newIndex = order.indexOf(overId)
+    (zone, activeId, overId) => {
+      if (!zone || !activeId || !overId || activeId === overId) return
+      const zoneWidgets = [...(ref.current.zones[zone] || [])]
+      const oldIndex = zoneWidgets.indexOf(activeId)
+      const newIndex = zoneWidgets.indexOf(overId)
       if (oldIndex === -1 || newIndex === -1) return
-      order.splice(oldIndex, 1)
-      order.splice(newIndex, 0, activeId)
-      persist({ ...ref.current, preset: 'custom', widgetOrder: order })
+      zoneWidgets.splice(oldIndex, 1)
+      zoneWidgets.splice(newIndex, 0, activeId)
+      const zones = { ...ref.current.zones, [zone]: zoneWidgets }
+      persist({ ...ref.current, preset: 'custom', zones })
     },
     [persist],
   )
@@ -90,10 +143,10 @@ export function useDashboardLayout() {
       const preset = PRESETS[presetKey]
       if (!preset) return
       persist({
+        ...ref.current,
         preset: presetKey,
-        widgetOrder: [...preset.order],
+        zones: cloneZoneWidgets(preset.zones),
         hiddenWidgets: [],
-        density: ref.current.density,
       })
     },
     [persist],
@@ -110,18 +163,41 @@ export function useDashboardLayout() {
     [persist],
   )
 
+  const setAiProvider = useCallback(
+    (provider) => {
+      persist({ ...ref.current, aiProvider: provider })
+    },
+    [persist],
+  )
+
+  const setTheme = useCallback(
+    (theme) => {
+      persist({ ...ref.current, theme })
+    },
+    [persist],
+  )
+
   return {
-    widgetOrder: layout.widgetOrder,
-    visibleWidgets,
+    zones: layout.zones,
+    allVisibleWidgets,
+    visibleWidgets: allVisibleWidgets,
     hiddenWidgets: hiddenWidgetsData,
     preset: layout.preset,
     density: layout.density,
+    aiProvider: layout.aiProvider,
+    widgetSizes: layout.widgetSizes,
+    layoutTheme: layout.theme,
     reorder,
     toggleWidget,
     applyPreset,
     resetLayout,
     setDensity,
-    isVisible: (id) => visibleWidgets.includes(id),
+    setAiProvider,
+    setTheme,
+    setWidgetSize,
+    cycleWidgetSize,
+    getWidgetSize,
+    isVisible: (id) => !layout.hiddenWidgets.includes(id),
     isHidden: (id) => layout.hiddenWidgets.includes(id),
   }
 }

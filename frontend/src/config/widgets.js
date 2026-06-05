@@ -1,3 +1,5 @@
+export const SIZES = ['small', 'medium', 'large']
+
 export const WIDGET_DEFS = {
   'financial-health': {
     id: 'financial-health',
@@ -6,6 +8,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 0,
     alwaysVisible: true,
     group: 'core',
+    zone: 'hero',
+    defaultSize: 'large',
+    sizes: ['large'],
   },
   insights: {
     id: 'insights',
@@ -14,6 +19,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 1,
     alwaysVisible: false,
     group: 'analytics',
+    zone: 'insights',
+    defaultSize: 'medium',
+    sizes: ['small', 'medium', 'large'],
   },
   metrics: {
     id: 'metrics',
@@ -22,22 +30,31 @@ export const WIDGET_DEFS = {
     defaultOrder: 2,
     alwaysVisible: false,
     group: 'analytics',
+    zone: 'analytics',
+    defaultSize: 'medium',
+    sizes: ['small', 'medium'],
   },
   trend: {
     id: 'trend',
-    title: 'Monthly Trend',
+    title: 'Trend Analysis',
     subtitle: 'Rolling spend',
     defaultOrder: 3,
     alwaysVisible: false,
     group: 'analytics',
+    zone: 'analytics',
+    defaultSize: 'medium',
+    sizes: ['small', 'medium', 'large'],
   },
   'category-intelligence': {
     id: 'category-intelligence',
-    title: 'Category Intelligence',
+    title: 'Category Mix',
     subtitle: 'Where the money goes',
     defaultOrder: 4,
     alwaysVisible: false,
     group: 'analytics',
+    zone: 'analytics',
+    defaultSize: 'medium',
+    sizes: ['small', 'medium', 'large'],
   },
   'budget-summary': {
     id: 'budget-summary',
@@ -46,6 +63,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 5,
     alwaysVisible: false,
     group: 'budget',
+    zone: 'hero',
+    defaultSize: 'small',
+    sizes: ['small', 'medium'],
   },
   'goal-progress': {
     id: 'goal-progress',
@@ -54,6 +74,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 6,
     alwaysVisible: false,
     group: 'budget',
+    zone: 'hero',
+    defaultSize: 'small',
+    sizes: ['small', 'medium'],
   },
   'quick-add': {
     id: 'quick-add',
@@ -62,6 +85,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 7,
     alwaysVisible: false,
     group: 'utility',
+    zone: 'utility',
+    defaultSize: 'small',
+    sizes: ['small'],
   },
   'ai-assistant': {
     id: 'ai-assistant',
@@ -70,6 +96,9 @@ export const WIDGET_DEFS = {
     defaultOrder: 8,
     alwaysVisible: false,
     group: 'future',
+    zone: 'future',
+    defaultSize: 'medium',
+    sizes: ['small', 'medium', 'large'],
   },
 }
 
@@ -79,57 +108,76 @@ export const PRESETS = {
   default: {
     label: 'Default',
     description: 'Balanced overview',
-    order: [
-      'financial-health',
-      'insights',
-      'metrics',
-      'trend',
-      'category-intelligence',
-      'budget-summary',
-      'goal-progress',
-      'quick-add',
-      'ai-assistant',
-    ],
+    zones: {
+      hero: ['financial-health', 'budget-summary', 'goal-progress'],
+      insights: ['insights'],
+      analytics: ['metrics', 'trend', 'category-intelligence'],
+      utility: ['quick-add'],
+      future: ['ai-assistant'],
+    },
   },
   analytics: {
     label: 'Analytics Focus',
-    description: 'Prioritize spending analysis',
-    order: [
-      'financial-health',
-      'metrics',
-      'trend',
-      'category-intelligence',
-      'insights',
-      'quick-add',
-      'budget-summary',
-      'goal-progress',
-      'ai-assistant',
-    ],
+    description: 'Prioritize forecasting and trends',
+    zones: {
+      hero: ['financial-health', 'insights'],
+      insights: [],
+      analytics: ['metrics', 'trend', 'category-intelligence'],
+      utility: ['quick-add'],
+      future: ['ai-assistant'],
+    },
   },
   budget: {
     label: 'Budget Focus',
-    description: 'Prioritize budgets and goals',
-    order: [
-      'financial-health',
-      'budget-summary',
-      'goal-progress',
-      'insights',
-      'metrics',
-      'trend',
-      'category-intelligence',
-      'quick-add',
-      'ai-assistant',
-    ],
+    description: 'Track budgets and goals',
+    zones: {
+      hero: ['financial-health', 'budget-summary', 'goal-progress'],
+      insights: ['insights'],
+      analytics: ['metrics'],
+      utility: ['quick-add'],
+      future: ['ai-assistant'],
+    },
+  },
+  goal: {
+    label: 'Goal Focus',
+    description: 'Focus on financial targets',
+    zones: {
+      hero: ['financial-health', 'goal-progress'],
+      insights: ['insights'],
+      analytics: ['metrics'],
+      utility: ['quick-add'],
+      future: [],
+    },
   },
   minimal: {
     label: 'Minimal',
     description: 'Only health and top insights',
-    order: [
-      'financial-health',
-      'insights',
-      'quick-add',
-    ],
+    zones: {
+      hero: ['financial-health'],
+      insights: ['insights'],
+      analytics: [],
+      utility: ['quick-add'],
+      future: [],
+    },
   },
+}
+
+export const PRESET_KEYS = Object.keys(PRESETS)
+
+export function getZoneWidgets(presetKey, zone) {
+  const preset = PRESETS[presetKey]
+  if (!preset) return []
+  return preset.zones[zone] || []
+}
+
+export const ZONES = ['hero', 'insights', 'analytics', 'utility', 'future']
+
+export const ZONE_LABELS = {
+  hero: 'Overview',
+  insights: 'Insights',
+  analytics: 'Analytics',
+  utility: 'Utilities',
+  future: 'Coming Soon',
 }
 
 export const DENSITY_MODES = {
