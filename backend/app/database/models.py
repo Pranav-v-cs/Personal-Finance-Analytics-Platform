@@ -1,13 +1,15 @@
-from sqlalchemy.sql import func
+from datetime import datetime
+
 from sqlalchemy import (
     Column,
-    Integer,
-    String,
+    Date,
     DateTime,
     ForeignKey,
-    Numeric
+    Integer,
+    Numeric,
+    String,
 )
-from datetime import datetime
+from sqlalchemy.sql import func
 
 from app.database.database import Base
 
@@ -27,6 +29,35 @@ class User(Base):
         DateTime(timezone=True),
         server_default=func.now()
     )
+
+
+class Budget(Base):
+    __tablename__ = "budgets"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category = Column(String, nullable=False)
+    monthly_limit = Column(Numeric(10, 2), nullable=False)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+
+class Goal(Base):
+    __tablename__ = "goals"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    target_amount = Column(Numeric(10, 2), nullable=False)
+    current_amount = Column(Numeric(10, 2), nullable=False, default=0)
+    target_date = Column(Date, nullable=True)
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
 
 class Expense(Base):
     __tablename__ = "expenses"
