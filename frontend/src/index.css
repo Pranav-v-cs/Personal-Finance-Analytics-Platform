@@ -648,6 +648,10 @@ button:disabled {
   min-height: 100%;
 }
 
+.placeholder-panel p {
+  max-width: 48ch;
+}
+
 .donut-demo {
   position: relative;
   min-height: 250px;

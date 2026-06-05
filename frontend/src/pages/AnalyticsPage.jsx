@@ -1,30 +1,73 @@
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/common/PageHeader'
+import { Badge } from '../components/common/Badge'
 import { InlineError } from '../components/common/InlineError'
-import { EmptyState } from '../components/common/EmptyState'
 import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
-import { ChartBars } from '../components/common/ChartBars'
 import { useDashboard } from '../hooks/useDashboard'
-import { formatCurrency, formatCompact } from '../utils/format'
 
 function AnalyticsSkeleton() {
   return (
     <div className="analytics-stack">
-      <Card className="analytics-panel">
-        <SkeletonLine className="w-40" />
-        <Skeleton className="chart-placeholder" />
-      </Card>
+      <div className="analytics-grid">
+        <Card className="analytics-panel">
+          <SkeletonLine className="w-40" />
+          <Skeleton className="chart-placeholder" />
+        </Card>
+        <Card className="analytics-panel">
+          <SkeletonLine className="w-32" />
+          <Skeleton className="chart-placeholder" />
+        </Card>
+      </div>
     </div>
   )
 }
 
+const PLACEHOLDER_SECTIONS = [
+  {
+    eyebrow: 'Trend analysis',
+    title: 'Spending trends',
+    description: 'Understand how your spending patterns shift across weeks, months, and seasons. Spot upward or downward trends before they become habits.',
+    badge: 'Phase 4',
+  },
+  {
+    eyebrow: 'Category intelligence',
+    title: 'Category analysis',
+    description: 'See which categories drive your spending and how their shares change over time. Identify categories that deserve more attention.',
+    badge: 'Phase 4',
+  },
+  {
+    eyebrow: 'Forecasting',
+    title: 'Spending forecast',
+    description: 'Project next month\'s spend based on historical patterns and current velocity. Get early warnings when you\'re trending over budget.',
+    badge: 'Coming soon',
+  },
+  {
+    eyebrow: 'Budget analysis',
+    title: 'Budget performance',
+    description: 'Compare actual spending against targets. Visualize over-budget and under-budget categories at a glance.',
+    badge: 'Coming soon',
+  },
+  {
+    eyebrow: 'AI reports',
+    title: 'Monthly narratives',
+    description: 'Receive auto-generated plain-English summaries of your financial activity. Understand what changed and why without crunching numbers.',
+    badge: 'Coming soon',
+  },
+  {
+    eyebrow: 'Anomaly detection',
+    title: 'Unusual activity',
+    description: 'Get flagged when a transaction or spending pattern falls outside your normal range. Catch errors, fraud, or one-off surprises early.',
+    badge: 'Coming soon',
+  },
+]
+
 export default function AnalyticsPage() {
-  const { summary, monthly, loading, error } = useDashboard()
+  const { loading, error } = useDashboard()
 
   if (loading) {
     return (
       <>
-        <PageHeader eyebrow="Analytics" title="Deep dive on spending" description="Loading the analysis view..." />
+        <PageHeader eyebrow="Analytics" title="Understand your spending" description="Deep-dive tools are being prepared." />
         <AnalyticsSkeleton />
       </>
     )
@@ -33,99 +76,34 @@ export default function AnalyticsPage() {
   if (error) {
     return (
       <>
-        <PageHeader eyebrow="Analytics" title="Deep dive on spending" description="A more detailed look at your data." />
+        <PageHeader eyebrow="Analytics" title="Understand your spending" description="Detailed breakdowns of where your money goes." />
         <InlineError message={error} />
       </>
     )
   }
 
-  const categoryData = (summary?.category_breakdown || []).map((item) => ({
-    name: item.category,
-    total: Number(item.total_amount || 0),
-  }))
-  const total = Number(summary?.total_expenses || 0)
-
   return (
     <div className="analytics-stack">
       <PageHeader
         eyebrow="Analytics"
-        title="Deep dive on spending"
-        description="A tighter analysis view over the same backend data."
+        title="Understand your spending"
+        description="Deep-dive analytics are coming in future phases. Placeholder cards below show what\'s planned."
       />
 
       <div className="analytics-grid">
-        <Card className="analytics-panel">
-          <div className="panel-heading">
-            <div>
-              <div className="eyebrow">Monthly trends</div>
-              <h2>12 month profile</h2>
+        {PLACEHOLDER_SECTIONS.map((section) => (
+          <Card key={section.title} className="analytics-panel placeholder-panel">
+            <div className="panel-heading">
+              <div>
+                <div className="eyebrow">{section.eyebrow}</div>
+                <h2>{section.title}</h2>
+              </div>
+              <Badge tone="info">{section.badge}</Badge>
             </div>
-          </div>
-          {monthly.length === 0 ? (
-            <EmptyState
-              title="No monthly data yet."
-              description="Monthly trend bars will appear once you log expenses over time."
-            />
-          ) : (
-            <ChartBars data={monthly} />
-          )}
-        </Card>
-
-        <Card className="analytics-panel">
-          <div className="panel-heading">
-            <div>
-              <div className="eyebrow">Concentration</div>
-              <h2>Category breakdown</h2>
-            </div>
-          </div>
-          {categoryData.length === 0 ? (
-            <EmptyState
-              title="No category breakdown yet."
-              description="Spend across a few categories and the concentration view will populate here."
-            />
-          ) : (
-            <div className="breakdown-list">
-              {categoryData.map((item) => {
-                const percent = total ? Math.round((item.total / total) * 100) : 0
-                return (
-                  <div key={item.name} className="breakdown-row">
-                    <div>
-                      <strong>{item.name}</strong>
-                      <span>{formatCompact(item.total)}</span>
-                    </div>
-                    <strong>{percent}%</strong>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </Card>
+            <p className="panel-copy">{section.description}</p>
+          </Card>
+        ))}
       </div>
-
-      <Card className="analytics-panel">
-        <div className="panel-heading">
-          <div>
-            <div className="eyebrow">Summary</div>
-            <h2>Headline metrics</h2>
-          </div>
-        </div>
-        <div className="summary-grid">
-          <div className="summary-card">
-            <span>Total expenses</span>
-            <strong>{formatCurrency(summary?.total_expenses)}</strong>
-          </div>
-          <div className="summary-card">
-            <span>Expense count</span>
-            <strong>{summary?.expense_count ?? 0}</strong>
-          </div>
-          <div className="summary-card">
-            <span>Top category share</span>
-            <strong>
-              {categoryData.length ? `${Math.round((Math.max(...categoryData.map((item) => item.total)) / (total || 1)) * 100)}%` : '0%'}
-            </strong>
-          </div>
-        </div>
-      </Card>
     </div>
   )
 }
