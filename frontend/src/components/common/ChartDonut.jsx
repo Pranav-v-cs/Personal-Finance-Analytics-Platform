@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts'
 import { formatCurrency } from '../../utils/format'
 
@@ -14,7 +15,7 @@ function DonutTooltip({ active, payload }) {
   )
 }
 
-export default function ChartDonut({ data, innerRadius = 75 }) {
+const ChartDonut = memo(function ChartDonut({ data, innerRadius = 75 }) {
   if (!data?.length) return null
 
   return (
@@ -41,4 +42,6 @@ export default function ChartDonut({ data, innerRadius = 75 }) {
       </ResponsiveContainer>
     </div>
   )
-}
+})
+
+export default ChartDonut

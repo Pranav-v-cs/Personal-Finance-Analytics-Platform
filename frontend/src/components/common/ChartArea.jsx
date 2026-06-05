@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { formatCurrency } from '../../utils/format'
 
@@ -15,7 +16,7 @@ function AreaTooltip({ active, payload, label }) {
   )
 }
 
-export default function ChartArea({ data, dataKey = 'total', name = 'Spending', height = 240, color = '#7c74e8' }) {
+const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spending', height = 240, color = '#7c74e8' }) {
   if (!data?.length) return null
 
   return (
@@ -37,4 +38,6 @@ export default function ChartArea({ data, dataKey = 'total', name = 'Spending', 
       </ResponsiveContainer>
     </div>
   )
-}
+})
+
+export default ChartArea

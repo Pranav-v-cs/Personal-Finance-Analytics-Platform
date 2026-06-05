@@ -105,7 +105,7 @@ function computeForecast(monthly, summary) {
   const vsLastMonth = lastMonthTotal > 0 ? ((projected - lastMonthTotal) / lastMonthTotal) * 100 : 0
 
   let confidence = 'Low'
-  if (daysElapsed >= 7 || currentMonthData.transactionCount >= 10) confidence = 'High'
+  if (daysElapsed >= 7) confidence = 'High'
   else if (daysElapsed >= 3) confidence = 'Medium'
 
   return {

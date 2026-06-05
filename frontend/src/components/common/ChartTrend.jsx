@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
 import { formatCurrency } from '../../utils/format'
 
@@ -11,7 +12,7 @@ function ChartTooltip({ active, payload, label }) {
   )
 }
 
-export default function ChartTrend({ data, height = 240 }) {
+const ChartTrend = memo(function ChartTrend({ data, height = 240 }) {
   if (!data?.length) return null
 
   return (
@@ -33,4 +34,6 @@ export default function ChartTrend({ data, height = 240 }) {
       </ResponsiveContainer>
     </div>
   )
-}
+})
+
+export default ChartTrend

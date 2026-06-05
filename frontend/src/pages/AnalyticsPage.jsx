@@ -114,6 +114,13 @@ export default function AnalyticsPage() {
     }
   }, [analytics])
 
+  const avgExpense = useMemo(() => {
+    if (summary?.expenseCount > 0 && Number(summary.totalExpenses) > 0) {
+      return Number(summary.totalExpenses) / Number(summary.expenseCount)
+    }
+    return 0
+  }, [summary])
+
   if (loading) {
     return (
       <>
@@ -344,7 +351,11 @@ export default function AnalyticsPage() {
                     <div className="anomaly-details">
                       <span>{txn.category} · {formatDate(txn.date)}</span>
                     </div>
-                    <div className="anomaly-zscore">z-score: {txn.z_score}x · {Math.abs(Math.round(txn.z_score))}x your average expense</div>
+                    <div className="anomaly-zscore">
+                      {avgExpense > 0
+                        ? `${Math.round(txn.amount / avgExpense)}x your average expense`
+                        : `z-score: ${txn.z_score}`}
+                    </div>
                   </div>
                 ))}
               </div>

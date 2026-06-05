@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts'
 import { formatCurrency } from '../../utils/format'
 
@@ -17,7 +18,7 @@ function StackedTooltip({ active, payload, label }) {
   )
 }
 
-export default function ChartStacked({ data, categories }) {
+const ChartStacked = memo(function ChartStacked({ data, categories }) {
   if (!data?.length || !categories?.length) return null
 
   return (
@@ -36,4 +37,6 @@ export default function ChartStacked({ data, categories }) {
       </ResponsiveContainer>
     </div>
   )
-}
+})
+
+export default ChartStacked

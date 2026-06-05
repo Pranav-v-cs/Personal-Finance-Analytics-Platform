@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { formatCurrency } from '../../utils/format'
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -7,11 +8,10 @@ function getIntensity(value, max) {
   return Math.min(value / max, 1)
 }
 
-export default function ChartHeatmap({ data }) {
+const ChartHeatmap = memo(function ChartHeatmap({ data }) {
   if (!data?.length) return null
 
   const maxAvg = Math.max(...data.map((d) => d.avg), 1)
-  const maxCount = Math.max(...data.map((d) => d.count), 1)
 
   const grid = []
   for (let day = 0; day < 7; day++) {
@@ -44,4 +44,6 @@ export default function ChartHeatmap({ data }) {
       })}
     </div>
   )
-}
+})
+
+export default ChartHeatmap
