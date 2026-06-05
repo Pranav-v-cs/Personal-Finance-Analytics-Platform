@@ -1,13 +1,22 @@
-import { useState } from 'react'
-import { ChartBars } from '../components/common/ChartBars'
+import { useCallback, useMemo, useState } from 'react'
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers'
+import { DeltaBadge } from '../components/common/DeltaBadge'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
-import { DeltaBadge } from '../components/common/DeltaBadge'
-import { InsightCard } from '../components/common/InsightCard'
 import { PageHeader } from '../components/common/PageHeader'
-import { QuickAdd } from '../components/QuickAdd'
-import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
-import { StatCard } from '../components/common/StatCard'
+import { SkeletonLine } from '../components/common/Skeleton'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { formatCurrency } from '../utils/format'
@@ -17,26 +26,66 @@ import { useFinancialHealth } from '../hooks/useFinancialHealth'
 import { useInsights } from '../hooks/useInsights'
 import { useSpendingMetrics } from '../hooks/useSpendingMetrics'
 import { useRouter } from '../hooks/useRouter'
+import { useDashboardLayout } from '../hooks/useDashboardLayout'
+import { DashboardWidget, WidgetSkeleton } from '../components/dashboard/DashboardWidget'
+import { CustomizeDrawer } from '../components/dashboard/CustomizeDrawer'
+import {
+  WidgetFinancialHealth,
+  WidgetInsights,
+  WidgetMetrics,
+  WidgetTrend,
+  WidgetCategoryIntelligence,
+  WidgetBudgetSummary,
+  WidgetGoalProgress,
+  WidgetQuickAddBlock,
+  WidgetAIAssistant,
+} from '../components/dashboard/widgets'
+
+const WIDGET_COMPONENTS = {
+  'financial-health': WidgetFinancialHealth,
+  insights: WidgetInsights,
+  metrics: WidgetMetrics,
+  trend: WidgetTrend,
+  'category-intelligence': WidgetCategoryIntelligence,
+  'budget-summary': WidgetBudgetSummary,
+  'goal-progress': WidgetGoalProgress,
+  'quick-add': WidgetQuickAddBlock,
+  'ai-assistant': WidgetAIAssistant,
+}
 
 function DashboardSkeleton() {
   return (
     <div className="dashboard-stack">
-      <Card className="dashboard-panel">
-        <SkeletonLine className="w-32" />
-        <SkeletonLine className="w-48" />
-      </Card>
-      <div className="stats-grid">
-        <Skeleton className="stat-card" />
-        <Skeleton className="stat-card" />
-        <Skeleton className="stat-card" />
-        <Skeleton className="stat-card" />
-      </div>
-      <Card className="dashboard-panel">
-        <SkeletonLine className="w-40" />
-        <Skeleton className="chart-placeholder" />
-      </Card>
+      <WidgetSkeleton />
+      <WidgetSkeleton />
+      <WidgetSkeleton />
     </div>
   )
+}
+
+function getWidgetProps(id, { insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate, formatCurrency }) {
+  switch (id) {
+    case 'financial-health':
+      return { health }
+    case 'insights':
+      return { insights }
+    case 'metrics':
+      return { metrics, formatCurrency }
+    case 'trend':
+      return { monthSeries, formatCurrency, trendNarrative, DeltaBadge, metrics }
+    case 'category-intelligence':
+      return { categories, formatCurrency }
+    case 'budget-summary':
+      return { budgets, formatCurrency, navigate }
+    case 'goal-progress':
+      return { goals, formatCurrency, navigate }
+    case 'quick-add':
+      return { categories, onSubmit: handleQuickAdd, saving: quickAddSaving }
+    case 'ai-assistant':
+      return {}
+    default:
+      return {}
+  }
 }
 
 export default function DashboardPage() {
@@ -46,6 +95,64 @@ export default function DashboardPage() {
   const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
   const health = useFinancialHealth({ summary, monthly, budgets, goals })
+  const layout = useDashboardLayout()
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
+  )
+
+  const handleDragEnd = useCallback(
+    (event) => {
+      const { active, over } = event
+      if (active.id !== over.id) {
+        layout.reorder(active.id, over.id)
+      }
+    },
+    [layout],
+  )
+
+  const monthSeries = monthly.length ? monthly : []
+  const hasExpenses = metrics.expenseCount > 0
+
+  const trendNarrative = useMemo(() => {
+    if (!monthly || monthly.length < 3) return ''
+    const amounts = monthly.slice(-3).map((m) => Number(m.total_amount ?? 0))
+    const [oldest, middle, newest] = amounts
+    if (newest > middle && middle > oldest) return 'Spending has increased steadily over the last 3 months.'
+    if (newest < middle && middle < oldest) return 'Spending has decreased steadily over the last 3 months.'
+    if (newest > oldest) return 'Spending is trending upward compared to 3 months ago, despite some fluctuation.'
+    if (newest < oldest) return 'Spending is trending downward compared to 3 months ago, despite some fluctuation.'
+    return ''
+  }, [monthly])
+
+  const handleQuickAdd = useCallback(async (values) => {
+    setQuickAddSaving(true)
+    try {
+      await createExpense(values)
+      refresh()
+    } catch {
+      // Error feedback is handled by QuickAdd component
+    } finally {
+      setQuickAddSaving(false)
+    }
+  }, [refresh])
+
+  const sharedProps = useMemo(() => ({
+    insights,
+    metrics,
+    health,
+    monthSeries,
+    trendNarrative,
+    categories,
+    budgets,
+    goals,
+    handleQuickAdd,
+    quickAddSaving,
+    navigate,
+    formatCurrency,
+  }), [insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, handleQuickAdd, quickAddSaving, navigate])
 
   if (loading) {
     return (
@@ -65,42 +172,19 @@ export default function DashboardPage() {
     )
   }
 
-  const monthSeries = monthly.length ? monthly : []
-  const hasExpenses = metrics.expenseCount > 0
-
-  const trendNarrative = (() => {
-    if (!monthly || monthly.length < 3) return ''
-    const amounts = monthly.slice(-3).map((m) => Number(m.total_amount ?? 0))
-    const [oldest, middle, newest] = amounts
-    if (newest > middle && middle > oldest) return 'Spending has increased steadily over the last 3 months.'
-    if (newest < middle && middle < oldest) return 'Spending has decreased steadily over the last 3 months.'
-    if (newest > oldest) return 'Spending is trending upward compared to 3 months ago, despite some fluctuation.'
-    if (newest < oldest) return 'Spending is trending downward compared to 3 months ago, despite some fluctuation.'
-    return ''
-  })()
-
-  const handleQuickAdd = async (values) => {
-    setQuickAddSaving(true)
-    try {
-      await createExpense(values)
-      refresh()
-    } catch {
-      // Error feedback is handled by QuickAdd component
-    } finally {
-      setQuickAddSaving(false)
-    }
-  }
-
   return (
-    <div className="dashboard-stack">
+    <div className={`dashboard-stack density-${layout.density}`}>
       <PageHeader
         eyebrow="Dashboard"
         title="Your financial snapshot"
         description="Your financial health, key metrics, and spending trends."
         actions={
-          <>
+          <div className="dashboard-header-actions">
+            <Button variant="ghost" onClick={() => setDrawerOpen(true)}>
+              Customize
+            </Button>
             <Button onClick={() => navigate('/expenses')}>All transactions</Button>
-          </>
+          </div>
         }
       />
 
@@ -114,238 +198,35 @@ export default function DashboardPage() {
           />
         </Card>
       ) : (
-        <>
-          <Card className="dashboard-panel health-card health-hero">
-            <div className="health-hero-body">
-              {health.score !== null ? (
-                <>
-                  <div className="health-score-display">
-                    <span className={`health-score-value score-${health.label.toLowerCase().replace(/\s+/g, '-')}`}>{health.score}</span>
-                    <span className="health-score-label">{health.label}</span>
-                    {health.scoreChange !== null && health.scoreChange !== 0 && (
-                      <span className={`delta-badge ${health.scoreChange > 0 ? 'delta-success' : 'delta-danger'}`}>
-                        {health.scoreChange > 0 ? '▲' : '▼'} {Math.abs(health.scoreChange)} pts
-                      </span>
-                    )}
-                  </div>
-                  <div className="health-hero-text">
-                    <div className="eyebrow">Financial Health</div>
-                    <h2>Wellness score</h2>
-                    <p className="health-score-desc">{health.recommendation}</p>
-                    {health.actionRecommendation && (
-                      <p className="health-action">{health.actionRecommendation}</p>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="health-score-display">
-                    <span className="health-score-value score-pending">--</span>
-                    <span className="health-score-label">Pending</span>
-                  </div>
-                  <div className="health-hero-text">
-                    <div className="eyebrow">Financial Health</div>
-                    <h2>Wellness score</h2>
-                    <p className="health-score-desc">{health.recommendation}</p>
-                    {health.actionRecommendation && (
-                      <p className="health-action">{health.actionRecommendation}</p>
-                    )}
-                  </div>
-                </>
-              )}
-              {health.metrics && (
-                <div className="health-metrics">
-                  <div className="health-metric">
-                    <span className="health-metric-label">Spending</span>
-                    <div className="health-metric-bar">
-                      <div className="health-metric-fill" style={{ width: `${health.metrics.spendingScore}%`, background: health.metrics.spendingScore >= 70 ? '#66bb6a' : health.metrics.spendingScore >= 50 ? '#f7b14a' : '#ef5350' }} />
-                    </div>
-                  </div>
-                  {health.metrics.budgetScore !== null && (
-                    <div className="health-metric">
-                      <span className="health-metric-label">Budget</span>
-                      <div className="health-metric-bar">
-                        <div className="health-metric-fill" style={{ width: `${health.metrics.budgetScore}%`, background: health.metrics.budgetScore >= 70 ? '#66bb6a' : health.metrics.budgetScore >= 50 ? '#f7b14a' : '#ef5350' }} />
-                      </div>
-                    </div>
-                  )}
-                  {health.metrics.goalScore !== null && (
-                    <div className="health-metric">
-                      <span className="health-metric-label">Goals</span>
-                      <div className="health-metric-bar">
-                        <div className="health-metric-fill" style={{ width: `${health.metrics.goalScore}%`, background: health.metrics.goalScore >= 70 ? '#66bb6a' : health.metrics.goalScore >= 50 ? '#f7b14a' : '#ef5350' }} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={layout.visibleWidgets}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="widgets-container">
+              {layout.visibleWidgets.map((widgetId) => {
+                const Widget = WIDGET_COMPONENTS[widgetId]
+                if (!Widget) return null
+                const props = getWidgetProps(widgetId, sharedProps)
+                return (
+                  <DashboardWidget
+                    key={widgetId}
+                    id={widgetId}
+                    density={layout.density}
+                    onToggle={layout.toggleWidget}
+                  >
+                    <Widget {...props} />
+                  </DashboardWidget>
+                )
+              })}
             </div>
-          </Card>
-
-          {insights.length > 0 && (
-            <div className="dashboard-section">
-              <div className="section-heading">
-                <div className="eyebrow">Insights</div>
-                <h2>Spending patterns</h2>
-              </div>
-              <div className="insight-cards">
-                {insights.map((insight) => (
-                  <InsightCard key={`${insight.type}-${insight.message}`} insight={insight} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="stats-grid">
-            <StatCard label="Total spending" value={formatCurrency(metrics.totalExpenses)} helper="All-time spend" />
-            <StatCard
-              label="Monthly change"
-              value={metrics.momChangePercent !== 0 ? `${metrics.momChangePercent > 0 ? '+' : ''}${metrics.momChangePercent.toFixed(1)}%` : '0%'}
-              helper="Compared to last month"
-              badge={metrics.momChangePercent !== 0 ? <DeltaBadge value={metrics.momChangePercent} /> : null}
-            />
-            <StatCard label="Avg daily spend" value={formatCurrency(metrics.avgDailySpend)} helper="Across tracked period" />
-            <StatCard label="Expense count" value={String(metrics.expenseCount)} helper="Total transactions" />
-          </div>
-
-          <div className="dashboard-grid">
-            <Card className="dashboard-panel">
-              <div className="panel-heading">
-                <div>
-                  <div className="eyebrow">Monthly trend</div>
-                  <h2>Rolling spend</h2>
-                </div>
-              </div>
-              {monthSeries.length >= 2 ? (
-                <div className="mom-comparison">
-                  <div className="mom-row">
-                    <span className="mom-label">This month</span>
-                    <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 1]?.total_amount ?? 0)}</span>
-                  </div>
-                  <div className="mom-row">
-                    <span className="mom-label">Last month</span>
-                    <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 2]?.total_amount ?? 0)}</span>
-                  </div>
-                  <div className="mom-row mom-change">
-                    <span className="mom-label">Change</span>
-                    <DeltaBadge value={metrics.momChangePercent} />
-                  </div>
-                </div>
-              ) : null}
-              <ChartBars data={monthSeries} />
-              {trendNarrative && (
-                <p className="trend-narrative">{trendNarrative}</p>
-              )}
-            </Card>
-
-            <Card className="dashboard-panel">
-              <div className="panel-heading">
-                <div>
-                  <div className="eyebrow">Category intelligence</div>
-                  <h2>Where the money goes</h2>
-                </div>
-              </div>
-              {categories.length === 0 ? (
-                <p className="empty-inline">No categories yet.</p>
-              ) : (
-                <div className="category-rank">
-                  {categories.slice(0, 5).map((row, idx) => {
-                    const pct = Number(row.percent ?? 0).toFixed(0)
-                    return (
-                      <div key={row.category} className="category-rank-row">
-                        <span className="category-rank-num">{idx + 1}</span>
-                        <div className="category-rank-info">
-                          <div className="category-rank-header">
-                            <strong>{row.category}</strong>
-                            <span className="category-rank-amount">{formatCurrency(row.total_amount || row.total)}</span>
-                          </div>
-                          <div className="category-rank-bar-track">
-                            <div className="category-rank-bar-fill" style={{ width: `${pct}%` }} />
-                          </div>
-                          <span className="category-rank-pct">{pct}% of spend</span>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </Card>
-          </div>
-
-          <Card className="dashboard-panel quick-add-panel">
-            <QuickAdd categories={categories} onSubmit={handleQuickAdd} saving={quickAddSaving} />
-          </Card>
-
-          <div className="dashboard-grid">
-            <Card className="dashboard-panel">
-              <div className="panel-heading">
-                <div>
-                  <div className="eyebrow">Budget Tracking</div>
-                  <h2>Spending targets</h2>
-                </div>
-                <button type="button" className="text-button" onClick={() => navigate('/budgets')}>Manage</button>
-              </div>
-              {budgets.length === 0 ? (
-                <p className="empty-inline">No budgets set. Create spending targets to track adherence.</p>
-              ) : (
-                <div className="budget-summary">
-                  <div className="budget-summary-stats">
-                    <div className="budget-summary-stat">
-                      <span className="budget-summary-stat-value">{budgets.length}</span>
-                      <span className="budget-summary-stat-label">Budgets</span>
-                    </div>
-                    <div className="budget-summary-stat">
-                      <span className="budget-summary-stat-value">{budgets.filter((b) => {
-                        const pct = Number(b.current_spend) / Number(b.monthly_limit) * 100
-                        return pct >= 75 && pct < 100
-                      }).length}</span>
-                      <span className="budget-summary-stat-label">At risk</span>
-                    </div>
-                    <div className="budget-summary-stat">
-                      <span className="budget-summary-stat-value budget-danger">{budgets.filter((b) => Number(b.current_spend) > Number(b.monthly_limit)).length}</span>
-                      <span className="budget-summary-stat-label">Over budget</span>
-                    </div>
-                  </div>
-                  <div className="budget-summary-list">
-                    {budgets.slice(0, 4).map((b) => {
-                      const pct = Number(b.current_spend) / Number(b.monthly_limit) * 100
-                      const status = pct > 100 ? 'danger' : pct >= 75 ? 'warning' : 'healthy'
-                      return (
-                        <div key={b.id} className="budget-summary-row">
-                          <div className="budget-summary-row-header">
-                            <span className="budget-summary-cat">{b.category}</span>
-                            <span className={`budget-summary-amount budget-${status}`}>
-                              {formatCurrency(b.current_spend)} / {formatCurrency(b.monthly_limit)}
-                            </span>
-                          </div>
-                          <div className="budget-bar-track">
-                            <div className="budget-bar-fill" style={{
-                              width: `${Math.min(pct, 100)}%`,
-                              background: pct > 100 ? 'linear-gradient(90deg, #ef5350, #c62828)' : 'linear-gradient(90deg, var(--accent), var(--accentStrong))',
-                            }} />
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            <Card className="dashboard-panel placeholder-panel">
-              <div className="panel-heading">
-                <div>
-                  <div className="eyebrow">AI Financial Assistant</div>
-                  <h2>Ask about your finances</h2>
-                </div>
-                <span className="badge badge-info">Coming soon</span>
-              </div>
-              <p className="panel-copy">
-                Ask questions like: <em>&ldquo;Where did I overspend?&rdquo;</em>, <em>&ldquo;How can I save money?&rdquo;</em>, or <em>&ldquo;Compare this month with last month.&rdquo;</em>
-              </p>
-            </Card>
-          </div>
-        </>
+          </SortableContext>
+        </DndContext>
       )}
 
       <button
@@ -356,6 +237,12 @@ export default function DashboardPage() {
       >
         +
       </button>
+
+      <CustomizeDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        layout={layout}
+      />
     </div>
   )
 }
