@@ -1088,6 +1088,11 @@ button:disabled {
   gap: 0.25rem;
 }
 
+.anomaly-spike-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
 .anomaly-spike h4 {
   margin: 0;
   font-size: 0.9rem;

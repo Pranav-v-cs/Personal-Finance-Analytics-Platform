@@ -6,8 +6,6 @@ import {
   getCategoryMonthly,
   getDashboardAnalytics,
 } from '../services/dashboardService'
-import { formatMonthLabel } from '../utils/format'
-
 function computeTrendNarrative(monthly) {
   const values = monthly.map((m) => m.total).filter((v) => v > 0)
   if (values.length < 3) return 'Add more expenses to see spending trends.'

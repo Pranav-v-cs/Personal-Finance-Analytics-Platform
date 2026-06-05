@@ -73,11 +73,13 @@ export default function AnalyticsPage() {
   }, [validMonthly])
 
   const cumulativeData = useMemo(() => {
+    const result = []
     let running = 0
-    return monthly.map((m) => {
-      running += Number(m.total)
-      return { ...m, cumulative: running }
-    })
+    for (let i = 0; i < monthly.length; i++) {
+      running += Number(monthly[i].total)
+      result.push({ ...monthly[i], cumulative: running })
+    }
+    return result
   }, [monthly])
 
   const { stackedData, stackedCategories } = useMemo(() => {
@@ -361,7 +363,7 @@ export default function AnalyticsPage() {
               </div>
             )}
             {anomalyInsights.categorySpikes.length > 0 && (
-              <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+              <div className="anomaly-spike-list">
                 {anomalyInsights.categorySpikes.map((spike) => (
                   <div key={spike.category} className="anomaly-spike">
                     <h4>{spike.category} spike</h4>
