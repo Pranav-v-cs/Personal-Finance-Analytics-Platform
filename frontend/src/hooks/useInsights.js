@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { formatCurrency } from '../utils/format'
 
 function getDismissed() {
   try {
@@ -26,7 +27,7 @@ function makeInsight(type, { title, message, priority, actionLabel }) {
   return { type, title, message, priority, dismissible: true, actionLabel }
 }
 
-export function useInsights({ summary, monthly, recent, categories }) {
+export function useInsights({ summary, monthly, recent, categories, budgets }) {
   return useMemo(() => {
     const insights = []
     const totalExpenses = Number(summary?.totalExpenses ?? summary?.total_expenses ?? 0)
@@ -47,7 +48,8 @@ export function useInsights({ summary, monthly, recent, categories }) {
       }
     }
 
-    if (topCategory && topCategory.percent && topCategory.percent > 40) {
+    const topPct = Number(topCategory?.percent ?? 0)
+    if (topPct > 40) {
       if (!isDismissed('savings', topCategory.category)) {
         const catTotal = categories?.find((c) => c.category === topCategory.category)
         const catAmount = Number(catTotal?.total_amount || catTotal?.total || 0)
@@ -75,6 +77,62 @@ export function useInsights({ summary, monthly, recent, categories }) {
       }
     }
 
+    if (budgets && budgets.length > 0) {
+      const now = new Date()
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate()
+      const daysElapsed = now.getDate()
+
+      budgets.forEach((b) => {
+        const spent = Number(b.current_spend ?? 0)
+        const limit = Number(b.monthly_limit)
+        if (!limit) return
+        const pct = (spent / limit) * 100
+
+        if (spent > limit) {
+          const over = spent - limit
+          if (!isDismissed('overspent', b.category)) {
+            insights.push(makeInsight('overspent', {
+              title: `${b.category} over budget`,
+              message: `${b.category} exceeded budget by ${formatCurrency(over)}`,
+              priority: 1,
+              actionLabel: 'Review budget',
+            }))
+          }
+        } else if (pct >= 75 && daysElapsed > 0) {
+          const dailyRate = spent / daysElapsed
+          const projected = spent + dailyRate * (daysInMonth - daysElapsed)
+          if (projected > limit) {
+            const mayExceed = Math.round(projected - limit)
+            if (!isDismissed('at_risk', b.category)) {
+              insights.push(makeInsight('at_risk', {
+                title: `${b.category} at risk`,
+                message: `At your current pace you may exceed your ${b.category} budget by ${formatCurrency(mayExceed)}`,
+                priority: 2,
+                actionLabel: 'View budget',
+              }))
+            }
+          } else {
+            if (!isDismissed('warning', b.category)) {
+              insights.push(makeInsight('warning', {
+                title: `${b.category} budget warning`,
+                message: `You have used ${Math.round(pct)}% of your ${b.category} budget`,
+                priority: 2,
+                actionLabel: 'View budget',
+              }))
+            }
+          }
+        } else if (pct < 50 && daysElapsed >= 7) {
+          if (!isDismissed('under_budget', b.category)) {
+            insights.push(makeInsight('under_budget', {
+              title: `${b.category} under budget`,
+              message: `You are ${Math.round(100 - pct)}% under budget for ${b.category}`,
+              priority: 5,
+            }))
+          }
+        }
+      })
+    }
+
     if (avgPerDay > 0 && previousTotal > 0) {
       if (!isDismissed('velocity', 'daily')) {
         let msg
@@ -92,14 +150,14 @@ export function useInsights({ summary, monthly, recent, categories }) {
       }
     }
 
-    if (topCategory && topCategory.percent) {
+    if (topCategory && topPct) {
       if (!isDismissed('top_category', topCategory.category)) {
         const catShare = categories?.find((c) => c.category === topCategory.category)
         const catTotal = Number(catShare?.total_amount || catShare?.total || 0)
         const formatted = catTotal ? `₹${catTotal.toLocaleString()}` : ''
         insights.push(makeInsight('top_category', {
           title: 'Top spending category',
-          message: `${topCategory.category} is your largest category this month${formatted ? '. ' + formatted : ''} — ${topCategory.percent.toFixed(0)}% of total spending`,
+          message: `${topCategory.category} is your largest category this month${formatted ? '. ' + formatted : ''} — ${topPct.toFixed(0)}% of total spending`,
           priority: 4,
           actionLabel: 'Review spending',
         }))
@@ -107,7 +165,7 @@ export function useInsights({ summary, monthly, recent, categories }) {
     }
 
     const totalPercentage = categories
-      ? categories.slice(0, 3).reduce((sum, cat) => sum + (cat.percent || 0), 0)
+      ? categories.slice(0, 3).reduce((sum, cat) => sum + Number(cat.percent || 0), 0)
       : 0
     if (totalPercentage > 70) {
       const top3Names = categories.slice(0, 3).map((c) => c.category).join(' and ')

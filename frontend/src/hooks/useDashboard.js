@@ -5,6 +5,7 @@ import {
   getMonthlySpending,
   getRecentExpenses,
 } from '../services/dashboardService'
+import { getBudgets } from '../services/budgetService'
 
 export function useDashboard() {
   const [state, setState] = useState({
@@ -12,6 +13,7 @@ export function useDashboard() {
     monthly: [],
     recent: [],
     categories: [],
+    budgets: [],
     loading: true,
     error: '',
   })
@@ -28,11 +30,12 @@ export function useDashboard() {
       setState((current) => ({ ...current, loading: true, error: '' }))
 
       try {
-        const [summary, monthly, recent, categories] = await Promise.all([
+        const [summary, monthly, recent, categories, budgets] = await Promise.all([
           getDashboardSummary(),
           getMonthlySpending(),
           getRecentExpenses(),
           getDashboardCategories(),
+          getBudgets(),
         ])
 
         if (!active) return
@@ -41,6 +44,7 @@ export function useDashboard() {
           monthly,
           recent,
           categories,
+          budgets,
           loading: false,
           error: '',
         })
@@ -51,6 +55,7 @@ export function useDashboard() {
           monthly: [],
           recent: [],
           categories: [],
+          budgets: [],
           loading: false,
           error: error.message || 'Unable to load dashboard data',
         })

@@ -40,10 +40,10 @@ function DashboardSkeleton() {
 }
 
 export default function DashboardPage() {
-  const { summary, monthly, recent, categories, loading, error, refresh } = useDashboard()
+  const { summary, monthly, recent, categories, budgets, loading, error, refresh } = useDashboard()
   const { navigate } = useRouter()
   const [quickAddSaving, setQuickAddSaving] = useState(false)
-  const insights = useInsights({ summary, monthly, recent, categories })
+  const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
   const health = useFinancialHealth({ summary, monthly })
 
@@ -224,7 +224,7 @@ export default function DashboardPage() {
               ) : (
                 <div className="category-rank">
                   {categories.slice(0, 5).map((row, idx) => {
-                    const pct = row.percent?.toFixed(0) || 0
+                    const pct = Number(row.percent ?? 0).toFixed(0)
                     return (
                       <div key={row.category} className="category-rank-row">
                         <span className="category-rank-num">{idx + 1}</span>
@@ -251,18 +251,59 @@ export default function DashboardPage() {
           </Card>
 
           <div className="dashboard-grid">
-            <Card className="dashboard-panel placeholder-panel">
+            <Card className="dashboard-panel">
               <div className="panel-heading">
                 <div>
                   <div className="eyebrow">Budget Tracking</div>
-                  <h2>Set spending targets</h2>
+                  <h2>Spending targets</h2>
                 </div>
-                <span className="badge badge-info">Coming soon</span>
+                <button type="button" className="text-button" onClick={() => navigate('/budgets')}>Manage</button>
               </div>
-              <p className="panel-copy">
-                Create monthly budgets for each category and track adherence in real time.
-                Get alerts when you&apos;re close to exceeding your limits.
-              </p>
+              {budgets.length === 0 ? (
+                <p className="empty-inline">No budgets set. Create spending targets to track adherence.</p>
+              ) : (
+                <div className="budget-summary">
+                  <div className="budget-summary-stats">
+                    <div className="budget-summary-stat">
+                      <span className="budget-summary-stat-value">{budgets.length}</span>
+                      <span className="budget-summary-stat-label">Budgets</span>
+                    </div>
+                    <div className="budget-summary-stat">
+                      <span className="budget-summary-stat-value">{budgets.filter((b) => {
+                        const pct = Number(b.current_spend) / Number(b.monthly_limit) * 100
+                        return pct >= 75 && pct < 100
+                      }).length}</span>
+                      <span className="budget-summary-stat-label">At risk</span>
+                    </div>
+                    <div className="budget-summary-stat">
+                      <span className="budget-summary-stat-value budget-danger">{budgets.filter((b) => Number(b.current_spend) > Number(b.monthly_limit)).length}</span>
+                      <span className="budget-summary-stat-label">Over budget</span>
+                    </div>
+                  </div>
+                  <div className="budget-summary-list">
+                    {budgets.slice(0, 4).map((b) => {
+                      const pct = Number(b.current_spend) / Number(b.monthly_limit) * 100
+                      const status = pct > 100 ? 'danger' : pct >= 75 ? 'warning' : 'healthy'
+                      return (
+                        <div key={b.id} className="budget-summary-row">
+                          <div className="budget-summary-row-header">
+                            <span className="budget-summary-cat">{b.category}</span>
+                            <span className={`budget-summary-amount budget-${status}`}>
+                              {formatCurrency(b.current_spend)} / {formatCurrency(b.monthly_limit)}
+                            </span>
+                          </div>
+                          <div className="budget-bar-track">
+                            <div className="budget-bar-fill" style={{
+                              width: `${Math.min(pct, 100)}%`,
+                              background: pct > 100 ? 'linear-gradient(90deg, #ef5350, #c62828)' : 'linear-gradient(90deg, var(--accent), var(--accentStrong))',
+                            }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
             </Card>
 
             <Card className="dashboard-panel placeholder-panel">
