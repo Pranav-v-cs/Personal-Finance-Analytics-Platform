@@ -970,6 +970,7 @@ button:disabled {
   align-items: center;
   gap: var(--space-6);
   padding: var(--space-2) 0;
+  flex-wrap: wrap;
 }
 
 .health-hero-body .health-score-value {
