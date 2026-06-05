@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { label: 'Dashboard', path: '/dashboard' },
   { label: 'Transactions', path: '/expenses' },
   { label: 'Analytics', path: '/analytics' },
+  { label: 'Budgets', path: '/budgets' },
   { label: 'Settings', path: '/settings' },
 ]
 

@@ -1210,6 +1210,115 @@ button:disabled {
   }
 }
 
+.budgets-stack {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.budgets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  gap: var(--space-4);
+}
+
+.budget-card {
+  display: grid;
+  gap: var(--space-4);
+  min-height: 280px;
+  align-content: start;
+}
+
+.budget-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.budget-card-header > div:first-child {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.budget-category {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.budget-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.budget-ring-wrap {
+  display: flex;
+  justify-content: center;
+  margin: var(--space-2) 0;
+}
+
+.budget-ring {
+  width: 120px;
+  height: 120px;
+}
+
+.budget-details {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.budget-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+}
+
+.budget-detail-label {
+  color: var(--muted);
+}
+
+.budget-detail-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.budget-over {
+  color: #ef5350;
+}
+
+.budget-bar-track {
+  height: 0.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.budget-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.budget-bar-skeleton {
+  min-height: 0.5rem;
+  border-radius: 999px;
+}
+
+.budget-form-card {
+  max-width: 480px;
+}
+
+.budget-form-card h3 {
+  margin: 0 0 var(--space-4);
+}
+
+.budget-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
 @keyframes shimmer {
   0% {
     background-position: 200% 0;
