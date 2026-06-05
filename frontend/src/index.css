@@ -957,6 +957,46 @@ button:disabled {
   padding: var(--space-4) 0;
 }
 
+.health-hero {
+  margin-bottom: 0;
+}
+
+.health-hero-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  padding: var(--space-2) 0;
+}
+
+.health-hero-body .health-score-value {
+  font-size: 4rem;
+}
+
+.health-hero-text {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.health-hero-text h2 {
+  margin: 0;
+  letter-spacing: -0.04em;
+}
+
+.health-hero-text .health-score-desc {
+  margin-top: 0.25rem;
+}
+
+.stats-grid-compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.empty-inline {
+  color: var(--muted);
+  font-size: 0.875rem;
+  padding: var(--space-4) 0;
+  margin: 0;
+}
+
 .health-score-display {
   display: flex;
   align-items: baseline;
