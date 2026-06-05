@@ -1,16 +1,5 @@
 import { useMemo } from 'react'
 
-function parseDate(val) {
-  if (!val) return null
-  const d = new Date(val)
-  return isNaN(d.getTime()) ? null : d
-}
-
-function daysBetween(a, b) {
-  const msPerDay = 86400000
-  return Math.floor((b.getTime() - a.getTime()) / msPerDay)
-}
-
 function getDismissed() {
   try {
     const raw = localStorage.getItem('dismissedInsights')
@@ -47,12 +36,71 @@ export function useInsights({ summary, monthly, recent, categories }) {
 
     if (!totalExpenses || !expenseCount) return insights
 
+    let momChangePercent = 0
+    let previousTotal = 0
+    if (monthly && monthly.length >= 2) {
+      const current = Number(monthly[monthly.length - 1]?.total_amount ?? 0)
+      const previous = Number(monthly[monthly.length - 2]?.total_amount ?? 0)
+      previousTotal = previous
+      if (previous > 0) {
+        momChangePercent = ((current - previous) / previous) * 100
+      }
+    }
+
+    if (topCategory && topCategory.percent && topCategory.percent > 40) {
+      if (!isDismissed('savings', topCategory.category)) {
+        const catTotal = categories?.find((c) => c.category === topCategory.category)
+        const catAmount = Number(catTotal?.total_amount || catTotal?.total || 0)
+        const monthlySave = Math.round(catAmount * 0.1)
+        insights.push(makeInsight('savings', {
+          title: 'Savings opportunity',
+          message: `Reducing ${topCategory.category} by 10% could save ₹${monthlySave}/month`,
+          priority: 1,
+          actionLabel: 'Review spending',
+        }))
+      }
+    }
+
+    if (Math.abs(momChangePercent) >= 8 && previousTotal > 0) {
+      const isIncrease = momChangePercent > 0
+      const typeKey = isIncrease ? 'velocity_up' : 'velocity_down'
+      if (!isDismissed(typeKey, 'mom')) {
+        insights.push(makeInsight(typeKey, {
+          title: isIncrease ? 'Spending increase' : 'Spending decrease',
+          message: isIncrease
+            ? `You spent ${Math.abs(momChangePercent).toFixed(0)}% more than last month`
+            : `You spent ${Math.abs(momChangePercent).toFixed(0)}% less than last month`,
+          priority: isIncrease ? 2 : 5,
+        }))
+      }
+    }
+
+    if (avgPerDay > 0 && previousTotal > 0) {
+      if (!isDismissed('velocity', 'daily')) {
+        let msg
+        if (Math.abs(momChangePercent) >= 5) {
+          const dir = momChangePercent > 0 ? 'faster' : 'slower'
+          msg = `You're spending ₹${avgPerDay.toFixed(0)}/day — ${Math.abs(momChangePercent).toFixed(0)}% ${dir} than last month`
+        } else {
+          msg = `You're spending ₹${avgPerDay.toFixed(0)}/day on average`
+        }
+        insights.push(makeInsight('velocity', {
+          title: 'Spending velocity',
+          message: msg,
+          priority: 3,
+        }))
+      }
+    }
+
     if (topCategory && topCategory.percent) {
       if (!isDismissed('top_category', topCategory.category)) {
+        const catShare = categories?.find((c) => c.category === topCategory.category)
+        const catTotal = Number(catShare?.total_amount || catShare?.total || 0)
+        const formatted = catTotal ? `₹${catTotal.toLocaleString()}` : ''
         insights.push(makeInsight('top_category', {
-          title: 'Top category',
-          message: `${topCategory.category} accounts for ${topCategory.percent.toFixed(0)}% of your spending`,
-          priority: 2,
+          title: 'Top spending category',
+          message: `${topCategory.category} is your largest category this month${formatted ? '. ' + formatted : ''} — ${topCategory.percent.toFixed(0)}% of total spending`,
+          priority: 4,
           actionLabel: 'Review spending',
         }))
       }
@@ -62,40 +110,12 @@ export function useInsights({ summary, monthly, recent, categories }) {
       ? categories.slice(0, 3).reduce((sum, cat) => sum + (cat.percent || 0), 0)
       : 0
     if (totalPercentage > 70) {
+      const top3Names = categories.slice(0, 3).map((c) => c.category).join(' and ')
       if (!isDismissed('concentration', 'top3')) {
         insights.push(makeInsight('concentration', {
           title: 'Spending concentration',
-          message: `Your top 3 categories make up ${totalPercentage.toFixed(0)}% of all spending`,
-          priority: 2,
-        }))
-      }
-    }
-
-    if (monthly && monthly.length >= 2) {
-      const current = Number(monthly[monthly.length - 1]?.total_amount ?? 0)
-      const previous = Number(monthly[monthly.length - 2]?.total_amount ?? 0)
-      if (previous > 0) {
-        const change = ((current - previous) / previous) * 100
-        if (Math.abs(change) >= 10) {
-          const isIncrease = change > 0
-          const typeKey = isIncrease ? 'increase' : 'decrease'
-          if (!isDismissed(typeKey, 'mom')) {
-            insights.push(makeInsight(typeKey, {
-              title: isIncrease ? 'Spending increase' : 'Spending decrease',
-              message: `${isIncrease ? 'Up' : 'Down'} ${Math.abs(change).toFixed(0)}% compared to last month`,
-              priority: isIncrease ? 1 : 3,
-            }))
-          }
-        }
-      }
-    }
-
-    if (topCategory && topCategory.percent && topCategory.percent > 40) {
-      if (!isDismissed('savings', topCategory.category)) {
-        insights.push(makeInsight('savings', {
-          title: 'Savings opportunity',
-          message: `Reducing ${topCategory.category} by 10% could save roughly ${((totalExpenses * topCategory.percent / 100) * 0.1).toFixed(0)} in total`,
-          priority: 2,
+          message: `${totalPercentage.toFixed(0)}% of spending comes from ${top3Names}`,
+          priority: 4,
         }))
       }
     }
@@ -105,43 +125,9 @@ export function useInsights({ summary, monthly, recent, categories }) {
       if (!isDismissed('largest', String(largest.id))) {
         insights.push(makeInsight('largest', {
           title: 'Largest transaction',
-          message: `${largest.title || 'Expense'} at ${largest.category || 'uncategorized'} — ${Number(largest.amount).toFixed(2)}`,
-          priority: 3,
+          message: `${largest.title || 'Expense'} — ₹${Number(largest.amount).toFixed(0)}`,
+          priority: 5,
         }))
-      }
-    }
-
-    if (avgPerDay > 0) {
-      if (!isDismissed('velocity', 'avg')) {
-        insights.push(makeInsight('velocity', {
-          title: 'Spending velocity',
-          message: `Average spend of ${avgPerDay.toFixed(2)} per day across your tracked period`,
-          priority: 3,
-        }))
-      }
-    }
-
-    if (recent && recent.length > 0) {
-      const dates = recent
-        .map((r) => r.date || r.transaction_date)
-        .filter(Boolean)
-        .map((d) => parseDate(d))
-        .filter(Boolean)
-        .sort((a, b) => b.getTime() - a.getTime())
-
-      if (dates.length > 0) {
-        const latest = dates[0]
-        const now = new Date()
-        const gap = daysBetween(latest, now)
-        if (gap >= 3) {
-          if (!isDismissed('streak', String(gap))) {
-            insights.push(makeInsight('streak', {
-              title: 'No recent spending',
-              message: `${gap} day${gap > 1 ? 's' : ''} since your last recorded expense`,
-              priority: 2,
-            }))
-          }
-        }
       }
     }
 
