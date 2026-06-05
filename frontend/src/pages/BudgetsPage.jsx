@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card } from '../components/ui/Card'
 import { PageHeader } from '../components/common/PageHeader'
 import { Badge } from '../components/common/Badge'
@@ -7,6 +7,7 @@ import { InlineError } from '../components/common/InlineError'
 import { Skeleton, SkeletonLine } from '../components/common/Skeleton'
 import { useBudgets } from '../hooks/useBudgets'
 import { formatCurrency } from '../utils/format'
+import { listCategories } from '../services/categoryService'
 
 function BudgetSkeleton() {
   return (
@@ -381,6 +382,16 @@ export default function BudgetsPage() {
     setFundingGoal(null)
     refreshBudgets()
   }
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const cats = await listCategories()
+        setCategories(Array.isArray(cats) ? cats : [])
+      } catch { /* ignore */ }
+    }
+    load()
+  }, [])
 
   const budgetedCategories = budgets.map((b) => b.category)
   const availableCategories = categoryList.filter((c) => !budgetedCategories.includes(c))
