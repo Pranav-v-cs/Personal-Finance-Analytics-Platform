@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react'
+import { memo, useCallback, useMemo } from 'react'
 import { Button } from '../ui/Button'
 import { WIDGET_DEFS, PRESETS } from '../../config/widgets'
 import { Card } from '../ui/Card'
@@ -43,7 +43,36 @@ function WidgetToggleItem({ def, visible, onToggle }) {
 
 const WidgetToggleItemMemo = memo(WidgetToggleItem)
 
-export function CustomizeDrawer({ open, onClose, layout }) {
+function computeRecommendations(layout, data) {
+  const recs = []
+  const { widgetOrder, isHidden } = layout
+  const { hasBudgets, hasGoals } = data || {}
+
+  if (hasBudgets && isHidden('budget-summary')) {
+    recs.push('You have active budgets. Enable Budget Summary to track them on your dashboard.')
+  }
+  if (hasGoals && isHidden('goal-progress')) {
+    recs.push('You have financial goals. Enable Goal Progress to monitor them at a glance.')
+  }
+  if (hasBudgets && !isHidden('budget-summary')) {
+    const idx = widgetOrder.indexOf('budget-summary')
+    if (idx > 3 && idx !== -1) {
+      recs.push('Consider moving Budget Summary higher on your dashboard for easier access.')
+    }
+  }
+  if (hasGoals && !isHidden('goal-progress')) {
+    const idx = widgetOrder.indexOf('goal-progress')
+    if (idx > 4 && idx !== -1) {
+      recs.push('Consider moving Goal Progress higher so you can see your targets more often.')
+    }
+  }
+  if (layout.preset !== 'minimal' && layout.density === 'comfortable' && layout.visibleWidgets.length > 5) {
+    recs.push('Try Compact mode to fit more widgets without scrolling.')
+  }
+  return recs
+}
+
+export function CustomizeDrawer({ open, onClose, layout, data }) {
   const handlePreset = useCallback(
     (key) => {
       layout.applyPreset(key)
@@ -62,6 +91,11 @@ export function CustomizeDrawer({ open, onClose, layout }) {
     layout.resetLayout()
   }, [layout])
 
+  const recommendations = useMemo(
+    () => computeRecommendations(layout, data),
+    [layout, data],
+  )
+
   if (!open) return null
 
   return (
@@ -76,6 +110,17 @@ export function CustomizeDrawer({ open, onClose, layout }) {
         </div>
 
         <div className="drawer-body">
+          {recommendations.length > 0 && (
+            <section className="drawer-section">
+              <h3>Suggestions</h3>
+              <ul className="recommendation-list">
+                {recommendations.map((rec, i) => (
+                  <li key={i} className="recommendation-item">{rec}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
           <section className="drawer-section">
             <h3>Presets</h3>
             <p className="drawer-hint">Switch between pre-arranged layouts</p>

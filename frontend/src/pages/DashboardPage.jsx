@@ -242,6 +242,7 @@ export default function DashboardPage() {
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         layout={layout}
+        data={{ hasBudgets: budgets.length > 0, hasGoals: goals.length > 0 }}
       />
     </div>
   )

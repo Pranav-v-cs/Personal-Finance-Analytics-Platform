@@ -105,11 +105,11 @@ export const WidgetTrend = memo(function WidgetTrend({ monthSeries, formatCurren
         <div className="mom-comparison">
           <div className="mom-row">
             <span className="mom-label">This month</span>
-            <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 1]?.total_amount ?? 0)}</span>
+            <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 1]?.total ?? 0)}</span>
           </div>
           <div className="mom-row">
             <span className="mom-label">Last month</span>
-            <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 2]?.total_amount ?? 0)}</span>
+            <span className="mom-value">{formatCurrency(monthSeries[monthSeries.length - 2]?.total ?? 0)}</span>
           </div>
           <div className="mom-row mom-change">
             <span className="mom-label">Change</span>
