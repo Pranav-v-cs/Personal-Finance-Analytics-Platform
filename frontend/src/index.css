@@ -1287,6 +1287,50 @@ button:disabled {
   color: #ef5350;
 }
 
+.section-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: var(--space-8) 0;
+}
+
+.section-header-wrap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: var(--space-6);
+}
+
+.section-header {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.section-desc {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.form-note {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-bottom: var(--space-3);
+}
+
+.budget-highlight {
+  color: #42a5f5;
+  font-weight: 600;
+}
+
+.goal-card .budget-ring-wrap {
+  margin-bottom: var(--space-4);
+}
+
 .budgets-stack {
   display: grid;
   gap: var(--space-6);

@@ -103,6 +103,175 @@ function BudgetCard({ budget, onEdit, onDelete }) {
   )
 }
 
+function GoalCard({ goal, onEdit, onDelete, onAddFunds }) {
+  const current = Number(goal.current_amount || 0)
+  const target = Number(goal.target_amount)
+  const pct = target > 0 ? Math.min((current / target) * 100, 100) : 0
+
+  let daysLeft = null
+  if (goal.target_date) {
+    daysLeft = Math.max(0, Math.ceil((new Date(goal.target_date) - new Date()) / (1000 * 60 * 60 * 24)))
+  }
+
+  const dailyNeeded = daysLeft && daysLeft > 0 && current < target
+    ? Math.ceil((target - current) / daysLeft)
+    : null
+
+  return (
+    <Card className="goal-card">
+      <div className="goal-card-header">
+        <div>
+          <div className="goal-name">{goal.name}</div>
+          {daysLeft !== null && (
+            <Badge tone={daysLeft <= 7 ? 'warning' : daysLeft <= 30 ? 'info' : 'success'}>
+              {daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}
+            </Badge>
+          )}
+        </div>
+        <div className="budget-actions">
+          <button type="button" className="text-button" onClick={() => onAddFunds(goal)}>Add funds</button>
+          <button type="button" className="text-button" onClick={() => onEdit(goal)}>Edit</button>
+          <button type="button" className="text-button danger" onClick={() => onDelete(goal)}>Delete</button>
+        </div>
+      </div>
+
+      <div className="budget-ring-wrap">
+        <svg className="budget-ring" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+          <circle
+            cx="60" cy="60" r="52"
+            fill="none"
+            stroke={pct >= 100 ? '#66bb6a' : pct >= 75 ? '#42a5f5' : '#f7b14a'}
+            strokeWidth="10"
+            strokeDasharray={`${pct * 3.266} 326.6`}
+            strokeLinecap="round"
+            transform="rotate(-90 60 60)"
+          />
+          <text x="60" y="56" textAnchor="middle" fill="var(--text)" fontSize="1.5rem" fontWeight="800" fontFamily="var(--font-mono)">
+            {Math.round(pct)}%
+          </text>
+          <text x="60" y="74" textAnchor="middle" fill="var(--muted)" fontSize="0.65rem">
+            saved
+          </text>
+        </svg>
+      </div>
+
+      <div className="budget-details">
+        <div className="budget-detail-row">
+          <span className="budget-detail-label">Saved</span>
+          <span className="budget-detail-value">{formatCurrency(current)}</span>
+        </div>
+        <div className="budget-detail-row">
+          <span className="budget-detail-label">Target</span>
+          <span className="budget-detail-value">{formatCurrency(target)}</span>
+        </div>
+        {dailyNeeded !== null && (
+          <div className="budget-detail-row">
+            <span className="budget-detail-label">Daily needed</span>
+            <span className="budget-detail-value budget-highlight">{formatCurrency(dailyNeeded)}</span>
+          </div>
+        )}
+        {pct >= 100 && (
+          <div className="budget-detail-row">
+            <span className="budget-detail-label">Status</span>
+            <span className="budget-detail-value" style={{ color: '#66bb6a', fontWeight: 700 }}>Goal reached!</span>
+          </div>
+        )}
+      </div>
+
+      <div className="budget-bar-track">
+        <div
+          className="budget-bar-fill"
+          style={{
+            width: `${Math.min(pct, 100)}%`,
+            background: pct >= 100 ? 'linear-gradient(90deg, #66bb6a, #2e7d32)' : 'linear-gradient(90deg, var(--accent), #42a5f5)',
+          }}
+        />
+      </div>
+    </Card>
+  )
+}
+
+function GoalForm({ onSubmit, onCancel, initial }) {
+  const [name, setName] = useState(initial?.name || '')
+  const [targetAmount, setTargetAmount] = useState(initial ? String(Number(initial.target_amount)) : '')
+  const [targetDate, setTargetDate] = useState(initial?.target_date ? initial.target_date.slice(0, 10) : '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    if (!name.trim()) { setError('Enter a goal name'); return }
+    const val = parseFloat(targetAmount)
+    if (!val || val <= 0) { setError('Target amount must be greater than 0'); return }
+    setSaving(true)
+    try {
+      await onSubmit({ name: name.trim(), targetAmount: val, targetDate: targetDate || null })
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Failed to save')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="budget-form" onSubmit={handleSubmit}>
+      <div className="field">
+        <label className="label">Goal name</label>
+        <input className="input" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" />
+      </div>
+      <div className="field">
+        <label className="label">Target amount (₹)</label>
+        <input className="input" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" />
+      </div>
+      <div className="field">
+        <label className="label">Target date (optional)</label>
+        <input className="input" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
+      </div>
+      {error && <InlineError message={error} />}
+      <div className="form-actions">
+        <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create goal'}</Button>
+        {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
+      </div>
+    </form>
+  )
+}
+
+function AddFundsForm({ goal, onSubmit, onCancel }) {
+  const [amount, setAmount] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError('')
+    const val = parseFloat(amount)
+    if (!val || val <= 0) { setError('Enter a valid amount'); return }
+    setSaving(true)
+    try {
+      await onSubmit(goal.id, val)
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || 'Failed to add funds')
+      setSaving(false)
+    }
+  }
+
+  return (
+    <form className="budget-form" onSubmit={handleSubmit}>
+      <p className="form-note">Adding funds to <strong>{goal.name}</strong></p>
+      <div className="field">
+        <label className="label">Amount to add (₹)</label>
+        <input className="input" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
+      </div>
+      {error && <InlineError message={error} />}
+      <div className="form-actions">
+        <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add funds'}</Button>
+        {onCancel && <Button type="button" variant="ghost" onClick={onCancel}>Cancel</Button>}
+      </div>
+    </form>
+  )
+}
+
 function BudgetForm({ categories, onSubmit, onCancel, initial }) {
   const [category, setCategory] = useState(initial?.category || '')
   const [limit, setLimit] = useState(initial ? String(Number(initial.monthly_limit)) : '')
@@ -153,10 +322,13 @@ function getCategoryStrings(categories) {
 }
 
 export default function BudgetsPage() {
-  const { budgets, goals, loading, error, refreshBudgets, createBudget, updateBudget, deleteBudget, budgetStats } = useBudgets()
+  const { budgets, goals, loading, error, refreshBudgets, createBudget, updateBudget, deleteBudget, createGoal, updateGoal, deleteGoal, budgetStats } = useBudgets()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [categories, setCategories] = useState([])
+  const [showGoalForm, setShowGoalForm] = useState(false)
+  const [editingGoal, setEditingGoal] = useState(null)
+  const [fundingGoal, setFundingGoal] = useState(null)
 
   const categoryList = getCategoryStrings(categories)
 
@@ -175,6 +347,38 @@ export default function BudgetsPage() {
   const handleDelete = async (budget) => {
     if (!window.confirm(`Delete budget for ${budget.category}?`)) return
     await deleteBudget(budget.id)
+    refreshBudgets()
+  }
+
+  const handleGoalCreate = async (data) => {
+    await createGoal({
+      ...data,
+      currentAmount: 0,
+    })
+    setShowGoalForm(false)
+    refreshBudgets()
+  }
+
+  const handleGoalUpdate = async (data) => {
+    await updateGoal(editingGoal.id, {
+      targetAmount: data.targetAmount,
+      targetDate: data.targetDate,
+    })
+    setEditingGoal(null)
+    refreshBudgets()
+  }
+
+  const handleGoalDelete = async (goal) => {
+    if (!window.confirm(`Delete goal "${goal.name}"?`)) return
+    await deleteGoal(goal.id)
+    refreshBudgets()
+  }
+
+  const handleGoalAddFunds = async (id, amount) => {
+    const goal = goals.find((g) => g.id === id)
+    const current = Number(goal?.current_amount || 0)
+    await updateGoal(id, { currentAmount: current + amount })
+    setFundingGoal(null)
     refreshBudgets()
   }
 
@@ -236,6 +440,53 @@ export default function BudgetsPage() {
         <div className="budgets-grid">
           {budgets.map((budget) => (
             <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete} />
+          ))}
+        </div>
+      )}
+
+      <hr className="section-divider" />
+
+      <div className="section-header-wrap">
+        <div className="section-header">
+          <h2 className="section-title">Goals</h2>
+          <p className="section-desc">Track progress towards your financial targets.</p>
+        </div>
+        <Button onClick={() => { setShowGoalForm(true); setEditingGoal(null); setFundingGoal(null) }}>
+          New goal
+        </Button>
+      </div>
+
+      {showGoalForm && (
+        <Card className="budget-form-card">
+          <h3>Create goal</h3>
+          <GoalForm onSubmit={handleGoalCreate} onCancel={() => setShowGoalForm(false)} />
+        </Card>
+      )}
+
+      {editingGoal && (
+        <Card className="budget-form-card">
+          <h3>Edit goal</h3>
+          <GoalForm onSubmit={handleGoalUpdate} onCancel={() => setEditingGoal(null)} initial={editingGoal} />
+        </Card>
+      )}
+
+      {fundingGoal && (
+        <Card className="budget-form-card">
+          <h3>Add funds</h3>
+          <AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} />
+        </Card>
+      )}
+
+      {goals.length === 0 && !showGoalForm ? (
+        <Card className="placeholder-panel">
+          <p className="panel-copy">
+            No goals yet. Create your first goal to start tracking financial targets.
+          </p>
+        </Card>
+      ) : (
+        <div className="budgets-grid">
+          {goals.map((goal) => (
+            <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
           ))}
         </div>
       )}
