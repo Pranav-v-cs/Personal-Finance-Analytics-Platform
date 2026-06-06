@@ -1,6 +1,39 @@
 import { useMemo } from 'react'
 
-function computeScore(amounts) {
+interface MonthlyEntry {
+  month?: string
+  total_amount?: number
+  total?: number
+}
+
+interface Summary {
+  totalExpenses?: number
+  total_expenses?: number
+  expenseCount?: number
+  expense_count?: number
+  topCategory?: { category: string; percent: number }
+  top_category?: { category: string; percent: number }
+}
+
+interface Budget {
+  current_spend?: number
+  monthly_limit: number
+  category: string
+}
+
+interface Goal {
+  current_amount?: number
+  target_amount: number
+  name: string
+}
+
+interface ScoreComponents {
+  budgetAdherence: number
+  trendScore: number
+  consistencyScore: number
+}
+
+function computeScore(amounts: number[]): ScoreComponents | null {
   if (amounts.length < 2) return null
 
   const avgMonthly = amounts.reduce((sum, a) => sum + a, 0) / amounts.length
@@ -8,7 +41,7 @@ function computeScore(amounts) {
 
   const budgetAdherence = Math.max(0, Math.min(100, 100 - (Math.abs(latestAmount - avgMonthly) / avgMonthly) * 100))
 
-  let trendScore = 50
+  let trendScore: number
   const prevAmount = amounts[amounts.length - 2]
   const change = ((latestAmount - prevAmount) / prevAmount) * 100
   if (change <= -10) trendScore = 90
@@ -27,7 +60,7 @@ function computeScore(amounts) {
   return { budgetAdherence, trendScore, consistencyScore }
 }
 
-function computeBudgetScore(budgets) {
+function computeBudgetScore(budgets: Budget[] | null | undefined): number | null {
   if (!budgets || budgets.length === 0) return null
   let total = 0
   budgets.forEach((b) => {
@@ -44,7 +77,7 @@ function computeBudgetScore(budgets) {
   return Math.round(total / budgets.length)
 }
 
-function computeGoalScore(goals) {
+function computeGoalScore(goals: Goal[] | null | undefined): number | null {
   if (!goals || goals.length === 0) return null
   let total = 0
   goals.forEach((g) => {
@@ -57,14 +90,23 @@ function computeGoalScore(goals) {
   return Math.round(total / goals.length)
 }
 
-function getLabel(score) {
+function getLabel(score: number): string {
   if (score >= 80) return 'Healthy'
   if (score >= 60) return 'On Track'
   if (score >= 40) return 'Watch Out'
   return 'Needs Attention'
 }
 
-function getRecommendation(score, topCategory, momChangePercent, amounts, budgets, goals, budgetScore, goalScore) {
+function getRecommendation(
+  score: number,
+  topCategory: { category: string; percent: number } | null,
+  momChangePercent: number,
+  _amounts: number[],
+  budgets: Budget[] | null | undefined,
+  _goals: Goal[] | null | undefined,
+  budgetScore: number | null,
+  goalScore: number | null,
+): string {
   if (score >= 80) {
     return 'Your spending patterns, budgets, and goals are well balanced. Keep it up!'
   }
@@ -102,7 +144,29 @@ function getRecommendation(score, topCategory, momChangePercent, amounts, budget
   return 'Your spending patterns need improvement. Focus on reducing top category expenses and setting realistic budgets.'
 }
 
-export function useFinancialHealth({ summary, monthly, budgets, goals }) {
+interface HealthInput {
+  summary?: Summary | null
+  monthly?: MonthlyEntry[] | null
+  budgets?: Budget[] | null
+  goals?: Goal[] | null
+}
+
+interface HealthMetrics {
+  budgetScore: number | null
+  goalScore: number | null
+  spendingScore: number
+}
+
+interface HealthResult {
+  score: number | null
+  label: string
+  recommendation: string
+  scoreChange: number | null
+  actionRecommendation: string
+  metrics: HealthMetrics | null
+}
+
+export function useFinancialHealth({ summary, monthly, budgets, goals }: HealthInput): HealthResult {
   return useMemo(() => {
     const totalExpenses = Number(summary?.totalExpenses ?? summary?.total_expenses ?? 0)
     const expenseCount = Number(summary?.expenseCount ?? summary?.expense_count ?? 0)
@@ -130,7 +194,7 @@ export function useFinancialHealth({ summary, monthly, budgets, goals }) {
       }
     }
 
-    const { budgetAdherence, trendScore, consistencyScore } = computeScore(amounts)
+    const { budgetAdherence, trendScore, consistencyScore } = computeScore(amounts)!
     const budgetScore = computeBudgetScore(budgets)
     const goalScore = computeGoalScore(goals)
 
@@ -151,7 +215,7 @@ export function useFinancialHealth({ summary, monthly, budgets, goals }) {
 
     const prevAmounts = amounts.slice(0, -1)
     const prevComponents = prevAmounts.length >= 2 ? computeScore(prevAmounts) : null
-    let prevScore = null
+    let prevScore: number | null = null
     if (prevComponents) {
       prevScore = Math.round(
         (prevComponents.budgetAdherence * weightSpending +
@@ -165,15 +229,12 @@ export function useFinancialHealth({ summary, monthly, budgets, goals }) {
 
     const label = getLabel(score)
 
-    let momChangePercent = 0
-    if (amounts.length >= 2) {
-      momChangePercent = ((amounts[amounts.length - 1] - amounts[amounts.length - 2]) / amounts[amounts.length - 2]) * 100
-    }
+    const momChangePercent = ((amounts[amounts.length - 1] - amounts[amounts.length - 2]) / amounts[amounts.length - 2]) * 100
 
-    const topCategory = summary?.topCategory || summary?.top_category || null
+    const topCategory = (summary?.topCategory || summary?.top_category) ?? null
     const recommendation = getRecommendation(score, topCategory, momChangePercent, amounts, budgets, goals, budgetScore, goalScore)
 
-    let actionRecommendation = ''
+    let actionRecommendation: string
     if (topCategory && topCategory.percent > 35) {
       const targetReduction = Math.max(5, Math.min(20, Math.round((topCategory.percent - 30) / 2)))
       actionRecommendation = `Reduce ${topCategory.category} by ${targetReduction}% to reach a score above ${Math.min(100, score + 15)}.`
@@ -189,7 +250,7 @@ export function useFinancialHealth({ summary, monthly, budgets, goals }) {
       actionRecommendation = 'Keep monthly spending consistent to improve stability.'
     }
 
-    const metrics = { budgetScore, goalScore, spendingScore: budgetAdherence }
+    const metrics: HealthMetrics = { budgetScore, goalScore, spendingScore: budgetAdherence }
 
     return { score, label, recommendation, scoreChange, actionRecommendation, metrics }
   }, [summary, monthly, budgets, goals])

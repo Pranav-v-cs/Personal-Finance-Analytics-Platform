@@ -1,5 +1,8 @@
-import os
 import logging
+
+from openai import OpenAI
+
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -15,35 +18,18 @@ def _build_system_prompt() -> str:
     )
 
 
-def generate_gemini(prompt: str, context: dict) -> str:
-    import google.generativeai as genai
-
-    api_key = os.getenv("GEMINI_API_KEY")
+def generate_openrouter(prompt: str, context: dict) -> str:
+    api_key = settings.OPENROUTER_API_KEY
     if not api_key:
-        return "Gemini API key not configured. Set GEMINI_API_KEY in .env"
+        return "OpenRouter API key not configured. Set OPENROUTER_API_KEY in .env"
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel("gemini-2.0-flash")
-    full_prompt = f"{_build_system_prompt()}\n\nFinancial Context:\n{context}\n\nUser Question:\n{prompt}"
-    try:
-        response = model.generate_content(full_prompt)
-        return response.text
-    except Exception as e:
-        logger.error(f"Gemini error: {e}")
-        return f"Gemini error: {str(e)}"
-
-
-def generate_openai(prompt: str, context: dict) -> str:
-    from openai import OpenAI
-
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        return "OpenAI API key not configured. Set OPENAI_API_KEY in .env"
-
-    client = OpenAI(api_key=api_key)
+    client = OpenAI(
+        api_key=api_key,
+        base_url=settings.OPENROUTER_BASE_URL,
+    )
     try:
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model=settings.OPENROUTER_MODEL,
             messages=[
                 {"role": "system", "content": _build_system_prompt()},
                 {"role": "user", "content": f"Financial Context:\n{context}\n\nUser Question:\n{prompt}"},
@@ -53,15 +39,15 @@ def generate_openai(prompt: str, context: dict) -> str:
         )
         return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"OpenAI error: {e}")
-        return f"OpenAI error: {str(e)}"
+        logger.error("OpenRouter error: %s", e)
+        return f"OpenRouter error: {str(e)}"
 
 
 def generate_ollama(prompt: str, context: dict) -> str:
     import httpx
 
-    base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    model = os.getenv("OLLAMA_MODEL", "llama3.2")
+    base_url = settings.OLLAMA_BASE_URL
+    model = settings.OLLAMA_MODEL
     full_prompt = f"{_build_system_prompt()}\n\nFinancial Context:\n{context}\n\nUser Question:\n{prompt}"
     try:
         response = httpx.post(
@@ -72,19 +58,30 @@ def generate_ollama(prompt: str, context: dict) -> str:
         response.raise_for_status()
         return response.json().get("response", "")
     except Exception as e:
-        logger.error(f"Ollama error: {e}")
+        logger.error("Ollama error: %s", e)
         return f"Ollama error: {str(e)}"
 
 
 PROVIDERS = {
-    "gemini": generate_gemini,
-    "openai": generate_openai,
+    "openrouter": generate_openrouter,
     "ollama": generate_ollama,
 }
 
 
 def generate(provider: str, prompt: str, context: dict) -> str:
-    gen_fn = PROVIDERS.get(provider)
-    if not gen_fn:
-        return f"Unknown provider: {provider}. Supported: {', '.join(PROVIDERS.keys())}"
-    return gen_fn(prompt, context)
+    FALLBACK_ORDER = ["openrouter", "ollama"]
+    providers_to_try = [provider] + [p for p in FALLBACK_ORDER if p != provider]
+
+    for prov in providers_to_try:
+        gen_fn = PROVIDERS.get(prov)
+        if not gen_fn:
+            continue
+        result = gen_fn(prompt, context)
+        if not result.startswith(("OpenRouter", "Ollama", "Unknown provider")):
+            return result
+        logger.warning("%s failed, %s", prov, result[:80])
+
+    return (
+        "AI service is temporarily unavailable. All providers returned errors. "
+        "Please try again later or check that API keys are configured."
+    )

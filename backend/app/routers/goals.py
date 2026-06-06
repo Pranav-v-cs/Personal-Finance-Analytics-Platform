@@ -31,9 +31,17 @@ def create_goal_route(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return create_user_goal(
+    goal = create_user_goal(
         db, current_user.id, data.name, data.target_amount, data.current_amount, data.target_date
     )
+    return {
+        "id": goal.id,
+        "name": goal.name,
+        "target_amount": goal.target_amount,
+        "current_amount": goal.current_amount,
+        "target_date": goal.target_date.isoformat() if goal.target_date else None,
+        "created_at": goal.created_at.isoformat() if goal.created_at else "",
+    }
 
 
 @router.put("/{goal_id}", response_model=GoalResponse)
@@ -44,7 +52,15 @@ def update_goal_route(
     current_user: User = Depends(get_current_user),
 ):
     goal = get_user_goal_or_404(db, current_user.id, goal_id)
-    return update_user_goal(db, goal, data.current_amount, data.target_amount, data.target_date)
+    updated = update_user_goal(db, goal, data.current_amount, data.target_amount, data.target_date)
+    return {
+        "id": updated.id,
+        "name": updated.name,
+        "target_amount": updated.target_amount,
+        "current_amount": updated.current_amount,
+        "target_date": updated.target_date.isoformat() if updated.target_date else None,
+        "created_at": updated.created_at.isoformat() if updated.created_at else "",
+    }
 
 
 @router.delete("/{goal_id}", response_model=MessageResponse)

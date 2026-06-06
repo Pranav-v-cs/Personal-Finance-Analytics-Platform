@@ -3,7 +3,7 @@ import { WIDGET_DEFS, WIDGET_IDS, PRESETS, ZONES } from '../config/widgets'
 
 const STORAGE_KEY = 'dashboard_layout'
 
-const DEFAULT_AI_PROVIDER = 'openai'
+const DEFAULT_AI_PROVIDER = 'openrouter'
 
 function loadLayout() {
   try {

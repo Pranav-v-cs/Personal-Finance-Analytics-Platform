@@ -6,7 +6,68 @@ import {
   getCategoryMonthly,
   getDashboardAnalytics,
 } from '../services/dashboardService'
-function computeTrendNarrative(monthly) {
+
+interface MonthlyItem {
+  month: string
+  total: number
+  label?: string
+}
+
+interface CategoryItem {
+  category: string
+  total: number
+  percent: number
+}
+
+interface CategoryMonthlyItem {
+  month: string
+  category: string
+  total_amount: number
+}
+
+interface AnomalyCandidate {
+  id: number
+  title: string
+  amount: number
+  category: string
+  date: string
+  z_score: number
+}
+
+interface AnalyticsData {
+  weekly_metrics: unknown[]
+  weekday_aggregates: unknown[]
+  anomaly_candidates: AnomalyCandidate[]
+  largest_transactions: unknown[]
+}
+
+interface CategoryTrend {
+  direction: 'up' | 'down' | 'flat' | 'new'
+  change: number
+  current: number
+}
+
+interface ForecastResult {
+  projected: number
+  dailyRate: number
+  daysRemaining: number
+  vsLastMonth: number
+  lastMonthTotal: number
+  confidence: string
+  daysElapsed: number
+}
+
+interface AnomalyInsights {
+  transactions: AnomalyCandidate[]
+  categorySpikes: {
+    category: string
+    current: number
+    average: number
+    percentAbove: number
+  }[]
+}
+
+function computeTrendNarrative(monthly: MonthlyItem[]): string {
   const values = monthly.map((m) => m.total).filter((v) => v > 0)
   if (values.length < 3) return 'Add more expenses to see spending trends.'
 
@@ -31,7 +92,10 @@ function computeTrendNarrative(monthly) {
   return `Spending has ${direction} over the last 3 months (${degree ? `${degree} ` : ''}${absChange}% vs the previous period).`
 }
 
-function computeCategoryTrends(categoryMonthly, monthly) {
+function computeCategoryTrends(
+  categoryMonthly: CategoryMonthlyItem[],
+  monthly: MonthlyItem[],
+): Record<string, CategoryTrend> {
   if (!categoryMonthly?.length || !monthly?.length) return {}
 
   const months = monthly.filter((m) => m.total > 0).map((m) => m.month)
@@ -42,20 +106,20 @@ function computeCategoryTrends(categoryMonthly, monthly) {
 
   const currentByCat = categoryMonthly
     .filter((cm) => cm.month === currentMonth)
-    .reduce((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
+    .reduce<Record<string, number>>((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
 
   if (!prevMonth) {
     return Object.fromEntries(
-      Object.entries(currentByCat).map(([cat]) => [cat, { direction: 'new', change: 0 }])
+      Object.entries(currentByCat).map(([cat]) => [cat, { direction: 'new' as const, change: 0, current: 0 }])
     )
   }
 
   const prevByCat = categoryMonthly
     .filter((cm) => cm.month === prevMonth)
-    .reduce((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
+    .reduce<Record<string, number>>((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
 
   const allCats = new Set([...Object.keys(currentByCat), ...Object.keys(prevByCat)])
-  const trends = {}
+  const trends: Record<string, CategoryTrend> = {}
   for (const cat of allCats) {
     const curr = currentByCat[cat] || 0
     const prev = prevByCat[cat] || 0
@@ -75,7 +139,7 @@ function computeCategoryTrends(categoryMonthly, monthly) {
   return trends
 }
 
-function computeForecast(monthly, summary) {
+function computeForecast(monthly: MonthlyItem[], summary: unknown): ForecastResult | null {
   if (!monthly?.length || !summary) return null
 
   const now = new Date()
@@ -117,10 +181,13 @@ function computeForecast(monthly, summary) {
   }
 }
 
-function computeCategoryInsights(categories, categoryTrends) {
+function computeCategoryInsights(
+  categories: CategoryItem[],
+  categoryTrends: Record<string, CategoryTrend>,
+): string[] {
   if (!categories?.length) return []
 
-  const insights = []
+  const insights: string[] = []
   const top = categories[0]
   if (top) {
     insights.push(`${top.category} remains your dominant category at ${top.percent}% of total spending.`)
@@ -155,11 +222,14 @@ function computeCategoryInsights(categories, categoryTrends) {
   return insights.slice(0, 4)
 }
 
-function computeAnomalyInsights(anomalyCandidates, categoryMonthly) {
+function computeAnomalyInsights(
+  anomalyCandidates: AnomalyCandidate[] | null | undefined,
+  categoryMonthly: CategoryMonthlyItem[],
+): AnomalyInsights {
   if (!anomalyCandidates?.length) return { transactions: [], categorySpikes: [] }
 
   const transactions = anomalyCandidates.filter((a) => Math.abs(a.z_score) >= 2.5).slice(0, 3)
-  const categorySpikes = []
+  const categorySpikes: AnomalyInsights['categorySpikes'] = []
 
   if (categoryMonthly?.length) {
     const months = [...new Set(categoryMonthly.map((cm) => cm.month))].sort()
@@ -167,11 +237,11 @@ function computeAnomalyInsights(anomalyCandidates, categoryMonthly) {
     if (currentMonth) {
       const currentByCat = categoryMonthly
         .filter((cm) => cm.month === currentMonth)
-        .reduce((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
+        .reduce<Record<string, number>>((acc, cm) => { acc[cm.category] = Number(cm.total_amount); return acc }, {})
 
       const historicalByCat = categoryMonthly
         .filter((cm) => cm.month !== currentMonth)
-        .reduce((acc, cm) => {
+        .reduce<Record<string, number[]>>((acc, cm) => {
           const cat = cm.category
           const amount = Number(cm.total_amount)
           if (!acc[cat]) acc[cat] = []
@@ -199,8 +269,26 @@ function computeAnomalyInsights(anomalyCandidates, categoryMonthly) {
   return { transactions: transactions.slice(0, 3), categorySpikes: categorySpikes.slice(0, 3) }
 }
 
-export function useAnalytics() {
-  const [state, setState] = useState({
+interface AnalyticsState {
+  summary: Record<string, unknown> | null
+  monthly: MonthlyItem[]
+  categories: CategoryItem[]
+  categoryMonthly: CategoryMonthlyItem[]
+  analytics: AnalyticsData | null
+  loading: boolean
+  error: string
+}
+
+interface UseAnalyticsResult extends AnalyticsState {
+  trendNarrative: string
+  categoryTrends: Record<string, CategoryTrend>
+  forecast: ForecastResult | null
+  categoryInsights: string[]
+  anomalyInsights: AnomalyInsights
+}
+
+export function useAnalytics(): UseAnalyticsResult {
+  const [state, setState] = useState<AnalyticsState>({
     summary: null,
     monthly: [],
     categories: [],
@@ -224,10 +312,19 @@ export function useAnalytics() {
           getDashboardAnalytics(),
         ])
         if (!active) return
-        setState({ summary, monthly, categories, categoryMonthly, analytics, loading: false, error: '' })
-      } catch (err) {
+        setState({
+          summary: summary as Record<string, unknown>,
+          monthly: monthly as MonthlyItem[],
+          categories: categories as CategoryItem[],
+          categoryMonthly: categoryMonthly as CategoryMonthlyItem[],
+          analytics: analytics as unknown as AnalyticsData,
+          loading: false,
+          error: '',
+        })
+      } catch (err: unknown) {
         if (!active) return
-        setState((s) => ({ ...s, loading: false, error: err.message || 'Unable to load analytics' }))
+        const message = err instanceof Error ? err.message : 'Unable to load analytics'
+        setState((s) => ({ ...s, loading: false, error: message }))
       }
     }
 
@@ -246,7 +343,10 @@ export function useAnalytics() {
     [state.categories, categoryTrends],
   )
   const anomalyInsights = useMemo(
-    () => computeAnomalyInsights(state.analytics?.anomaly_candidates, state.categoryMonthly),
+    () => computeAnomalyInsights(
+      (state.analytics as AnalyticsData | null)?.anomaly_candidates,
+      state.categoryMonthly,
+    ),
     [state.analytics, state.categoryMonthly],
   )
 

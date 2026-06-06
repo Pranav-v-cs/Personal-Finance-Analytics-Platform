@@ -1,16 +1,17 @@
+import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 
 export function PageContainer({ className, children, ...props }) {
   return (
-    <div
-      className={cn(
-        'w-full max-w-[1200px] mx-auto px-[var(--page-padding)] pb-8',
-        className,
-      )}
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+      className={cn('w-full max-w-[1200px] mx-auto px-[var(--page-padding)] pb-8', className)}
       {...props}
     >
       {children}
-    </div>
+    </motion.div>
   )
 }
 

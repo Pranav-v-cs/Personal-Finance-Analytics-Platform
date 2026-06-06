@@ -1,4 +1,6 @@
 import { useMemo, useState, useRef, useEffect } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import ReactMarkdown from 'react-markdown'
 import { Card, CardContent } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { PageHeader } from '../components/common/PageHeader'
@@ -16,20 +18,32 @@ import { SUGGESTED_QUESTIONS } from '../services/ai/promptTemplates'
 import { generateFinancialReport } from '../services/ai/aiReports'
 import { generateSavingsOpportunities, generateGoalRecommendations } from '../services/ai/aiInsights'
 
-function AIMessage({ message }) {
+function AIMessage({ message, index = 0 }) {
   const isUser = message.role === 'user'
   return (
-    <div className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 16, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.3, delay: index * 0.04, ease: 'easeOut' }}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+    >
       <div
-        className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[85%] rounded-xl px-4 py-3 text-sm leading-relaxed ${
           isUser
             ? 'bg-[var(--accent)] text-white rounded-br-sm'
             : 'bg-[var(--surface)] border border-[var(--border)] rounded-bl-sm'
         }`}
       >
-        {message.content}
+        {isUser ? (
+          message.content
+        ) : (
+          <div className="prose prose-sm prose-invert max-w-none [&_p]:mb-2 [&_p:last-child]:mb-0 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:mb-0.5 [&_code]:text-[var(--accent)] [&_code]:text-xs [&_pre]:bg-[rgba(0,0,0,0.3)] [&_pre]:p-3 [&_pre]:rounded-lg [&_pre]:overflow-x-auto [&_pre]:text-xs [&_strong]:font-bold [&_h1]:text-lg [&_h1]:font-extrabold [&_h2]:text-base [&_h2]:font-bold [&_h3]:text-sm [&_h3]:font-bold [&_hr]:border-[var(--border)]">
+            <ReactMarkdown>{message.content}</ReactMarkdown>
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -180,9 +194,11 @@ export default function AIAssistantPage() {
                 </div>
               ) : (
                 <>
-                  {messages.map((msg, i) => (
-                    <AIMessage key={i} message={msg} />
-                  ))}
+                  <AnimatePresence mode="popLayout">
+                    {messages.map((msg, i) => (
+                      <AIMessage key={i} index={i} message={msg} />
+                    ))}
+                  </AnimatePresence>
                   {loading && (
                     <div className="flex justify-start">
                       <div className="max-w-[85%] rounded-xl rounded-bl-sm px-4 py-3 bg-[var(--surface)] border border-[var(--border)]">
@@ -207,6 +223,17 @@ export default function AIAssistantPage() {
             )}
 
             <div className="border-t border-[var(--border)] px-6 py-4">
+              {messages.length > 0 && (
+                <div className="flex justify-end mb-2">
+                  <button
+                    type="button"
+                    onClick={clearHistory}
+                    className="text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors"
+                  >
+                    Clear chat
+                  </button>
+                </div>
+              )}
               <div className="flex gap-3">
                 <input
                   ref={inputRef}

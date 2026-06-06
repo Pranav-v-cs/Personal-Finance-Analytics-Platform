@@ -93,7 +93,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-2">
                 <span className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">Provider</span>
                 <div className="flex flex-wrap gap-2">
-                  {['openai', 'gemini', 'ollama'].map((provider) => (
+                  {['openrouter', 'ollama'].map((provider) => (
                     <button
                       key={provider}
                       type="button"
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                       }`}
                       onClick={() => layout.setAiProvider(provider)}
                     >
-                      {provider === 'openai' ? 'OpenAI' : provider === 'gemini' ? 'Gemini' : 'Ollama'}
+                      {provider === 'openrouter' ? 'OpenRouter' : 'Ollama'}
                     </button>
                   ))}
                 </div>

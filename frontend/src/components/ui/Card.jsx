@@ -1,9 +1,12 @@
 import { forwardRef } from 'react'
+import { motion } from 'framer-motion'
 import { cn } from '../../lib/utils'
 
 const Card = forwardRef(({ className, ...props }, ref) => (
-  <div
+  <motion.div
     ref={ref}
+    whileHover={{ y: -3 }}
+    transition={{ type: 'spring', stiffness: 300, damping: 20, mass: 0.8 }}
     className={cn(
       'rounded-xl border border-[var(--border)] bg-gradient-to-b from-[var(--surface)] to-[var(--surfaceStrong)] shadow-[0_18px_48px_var(--shadow)] p-6',
       className,

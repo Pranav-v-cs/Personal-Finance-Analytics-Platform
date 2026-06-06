@@ -179,6 +179,7 @@ def get_analytics(db: Session, user_id: int) -> dict:
             "weekly_metrics": [],
             "weekday_aggregates": [],
             "anomaly_candidates": [],
+            "largest_transactions": [],
         }
 
     amounts = [float(e.amount) for e in expenses]
