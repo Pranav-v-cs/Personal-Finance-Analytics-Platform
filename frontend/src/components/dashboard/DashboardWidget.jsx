@@ -27,7 +27,7 @@ export function DashboardWidget({ id, children, zone, className = '', density, o
     <div
       ref={setNodeRef}
       style={style}
-      className={`${size === 'small' ? 'col-span-1' : size === 'large' ? 'col-span-2' : ''} ${className}`}
+      className={`${size === 'small' ? 'sm:col-span-1' : size === 'medium' ? 'sm:col-span-2' : 'sm:col-span-4'} ${className}`}
     >
       <Card>
         <div className="flex items-center justify-between gap-2 px-5 pt-4 pb-0">

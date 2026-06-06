@@ -75,7 +75,8 @@ function getWidgetProps(id, ctx) {
 }
 
 function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
-  if (!widgetIds || widgetIds.length === 0) return null
+  const visibleIds = useMemo(() => widgetIds?.filter((id) => layout.isVisible(id)) || [], [widgetIds, layout])
+  if (visibleIds.length === 0) return null
 
   const isHero = zone === 'hero' || zone === 'utility'
 
@@ -86,9 +87,9 @@ function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
           <h2 className="text-lg font-extrabold tracking-tight">{label}</h2>
         </div>
       )}
-      <SortableContext items={widgetIds} strategy={verticalListSortingStrategy}>
-        <div className={`flex flex-col gap-4 ${zone === 'insights' ? 'sm:grid sm:grid-cols-2' : ''} ${zone === 'analytics' ? 'sm:grid sm:grid-cols-2' : ''}`}>
-          {widgetIds.map((widgetId) => {
+      <SortableContext items={visibleIds} strategy={verticalListSortingStrategy}>
+        <div className="flex flex-col gap-4 sm:grid sm:grid-cols-4">
+          {visibleIds.map((widgetId) => {
             const Widget = WIDGET_COMPONENTS[widgetId]
             if (!Widget) return null
             const props = getWidgetProps(widgetId, sharedProps)
@@ -237,13 +238,6 @@ export default function DashboardPage() {
               zone="utility"
               label=""
               widgetIds={layout.zones?.utility || []}
-              layout={layout}
-              sharedProps={sharedProps}
-            />
-            <ZoneSection
-              zone="future"
-              label="Coming Soon"
-              widgetIds={layout.zones?.future || []}
               layout={layout}
               sharedProps={sharedProps}
             />
