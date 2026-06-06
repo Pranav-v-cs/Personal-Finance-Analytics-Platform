@@ -22,7 +22,7 @@ function Avatar({ name, email }) {
     .toUpperCase()
 
   return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-bold text-white flex-shrink-0" title={name || email}>
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-(--accent) text-xs font-bold text-white shrink-0" title={name || email}>
       {initials}
     </div>
   )
