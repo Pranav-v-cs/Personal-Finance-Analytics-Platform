@@ -1,122 +1,46 @@
-# Backend README
+# Finlytics Backend
 
-## Overview
+FastAPI backend for the Finlytics personal finance platform.
 
-This backend powers a personal finance expense tracking MVP built with:
+## Stack
 
-- FastAPI
-- SQLite
-- SQLAlchemy ORM
-- Pydantic schemas
-- JWT authentication
+- FastAPI (Python 3.11)
+- PostgreSQL 15 + SQLAlchemy ORM
+- JWT auth with Argon2id password hashing
+- OpenRouter AI integration (default: Google Gemini 2.0 Flash)
 
-It supports user registration, login, authenticated expense management, dashboard analytics, and default category lookup.
-
-## Folder Structure
-
-```text
-backend/
-├── app/
-│   ├── core/
-│   ├── database/
-│   ├── routers/
-│   ├── schemas/
-│   ├── services/
-│   └── main.py
-├── expense_tracker.db
-└── requirements.txt
-```
-
-### Key Modules
-
-- `app/core/`: JWT, password hashing, and configuration
-- `app/database/`: SQLAlchemy engine, session, and ORM models
-- `app/routers/`: FastAPI route handlers
-- `app/schemas/`: Pydantic request/response models
-- `app/services/`: business logic and database operations
-
-## Setup Instructions
-
-1. Create and activate a virtual environment inside `backend/`.
-2. Install dependencies:
+## Setup
 
 ```bash
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env   # set DATABASE_URL and OPENROUTER_API_KEY
+uvicorn app.main:app --reload --port 8000
 ```
 
-3. Ensure `backend/.env` exists with:
+Swagger UI at `http://127.0.0.1:8000/docs`.
 
-```env
-SECRET_KEY=change-me-in-production
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
+## Key Endpoints
 
-4. Run the API:
+| Route | Description |
+|---|---|
+| `POST /api/auth/register` | Create account |
+| `POST /api/auth/login` | Get JWT token |
+| `GET /api/auth/me` | Current user |
+| `GET/POST /api/expenses` | List / create expenses |
+| `PUT/DELETE /api/expenses/{id}` | Update / delete expense |
+| `GET/POST /api/budgets` | Budget CRUD |
+| `GET/POST /api/goals` | Goal CRUD |
+| `GET/POST /api/ai/chat` | AI assistant chat |
+| `GET /api/dashboard/summary` | Financial summary |
+| `GET /api/dashboard/monthly` | Monthly breakdown |
+| `GET /api/dashboard/trends` | Trend data |
+| `GET /api/dashboard/insights` | AI-generated insights |
+
+## Tests
 
 ```bash
-uvicorn app.main:app --reload
+python -m pytest           # run all tests
+python -m pytest --cov=app # with coverage
 ```
-
-5. Open Swagger UI:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-## Authentication Flow
-
-1. `POST /auth/register` creates a user with a hashed password.
-2. `POST /auth/login` validates credentials and returns a JWT access token.
-3. Protected routes require:
-
-```http
-Authorization: Bearer <token>
-```
-
-4. `GET /auth/me` returns the authenticated user.
-
-## API Endpoints
-
-### Authentication
-
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/me` *(protected)*
-
-### Expenses
-
-- `POST /expenses` *(protected)*
-- `GET /expenses` *(protected, supports filters)*
-- `GET /expenses/{expense_id}` *(protected)*
-- `PUT /expenses/{expense_id}` *(protected)*
-- `DELETE /expenses/{expense_id}` *(protected)*
-
-### Dashboard
-
-- `GET /dashboard/summary` *(protected)*
-- `GET /dashboard/monthly` *(protected)*
-
-### Categories
-
-- `GET /categories`
-
-## Expense Filtering
-
-`GET /expenses` supports these optional query parameters:
-
-- `category`
-- `start_date`
-- `end_date`
-- `min_amount`
-- `max_amount`
-
-Filtering only applies to the authenticated user’s own expenses.
-
-## Future Improvements
-
-- Add automated tests for auth, CRUD, filtering, and analytics
-- Add pagination for large expense lists
-- Add category persistence if user-defined categories are needed
-- Add Alembic migrations when schema changes need versioning
-- Add audit logging and rate limiting for production hardening
