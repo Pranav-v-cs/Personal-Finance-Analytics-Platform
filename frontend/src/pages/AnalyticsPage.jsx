@@ -7,7 +7,6 @@ import { Button } from '../components/ui/Button'
 import { InlineError } from '../components/common/InlineError'
 import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
 import { useAnalytics } from '../hooks/useAnalytics'
-import { useDashboardLayout } from '../hooks/useDashboardLayout'
 import { useAIExplain } from '../hooks/useAIExplain'
 import { formatCurrency, formatDate, formatMonthLabel } from '../utils/format'
 import ChartTrend from '../components/common/ChartTrend'
@@ -63,8 +62,6 @@ export default function AnalyticsPage() {
     loading, error,
     trendNarrative, categoryTrends, forecast, categoryInsights, anomalyInsights,
   } = useAnalytics()
-  const { aiProvider } = useDashboardLayout()
-
   const data = useMemo(() => ({ summary, monthly, categories, analytics, forecast, categoryTrends, categoryInsights, anomalyInsights }), [
     summary, monthly, categories, analytics, forecast, categoryTrends, categoryInsights, anomalyInsights,
   ])
@@ -72,7 +69,7 @@ export default function AnalyticsPage() {
   const {
     explanation, explaining, explainError,
     explainForecast, explainAnomaly, clearExplanation,
-  } = useAIExplain(data, aiProvider)
+  } = useAIExplain(data)
 
   const [explainingId, setExplainingId] = useState(null)
 

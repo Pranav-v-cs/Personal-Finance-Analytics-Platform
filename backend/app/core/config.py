@@ -10,9 +10,8 @@ class Settings(BaseSettings):
 
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OPENROUTER_MODEL: str = "openai/gpt-4o-mini"
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "llama3.2"
+    OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
+    OPENROUTER_FREE_MODEL: bool = True
 
 
 settings = Settings()

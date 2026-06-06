@@ -6,7 +6,7 @@ import {
   generateExplainAnomaly,
 } from '../services/ai/aiInsights'
 
-export function useAIExplain(data, provider) {
+export function useAIExplain(data) {
   const [explanation, setExplanation] = useState('')
   const [explaining, setExplaining] = useState(false)
   const [explainError, setExplainError] = useState('')
@@ -16,56 +16,56 @@ export function useAIExplain(data, provider) {
     setExplainError('')
     setExplanation('')
     try {
-      const result = await generateExplainBudget(budget, data, provider)
+      const result = await generateExplainBudget(budget, data)
       setExplanation(result)
     } catch (err) {
       setExplainError(err.message || 'Failed to generate explanation')
     } finally {
       setExplaining(false)
     }
-  }, [data, provider])
+  }, [data])
 
   const explainHealth = useCallback(async (health) => {
     setExplaining(true)
     setExplainError('')
     setExplanation('')
     try {
-      const result = await generateExplainHealth(health, data, provider)
+      const result = await generateExplainHealth(health, data)
       setExplanation(result)
     } catch (err) {
       setExplainError(err.message || 'Failed to generate explanation')
     } finally {
       setExplaining(false)
     }
-  }, [data, provider])
+  }, [data])
 
   const explainForecast = useCallback(async (forecast) => {
     setExplaining(true)
     setExplainError('')
     setExplanation('')
     try {
-      const result = await generateExplainForecast(forecast, data, provider)
+      const result = await generateExplainForecast(forecast, data)
       setExplanation(result)
     } catch (err) {
       setExplainError(err.message || 'Failed to generate explanation')
     } finally {
       setExplaining(false)
     }
-  }, [data, provider])
+  }, [data])
 
   const explainAnomaly = useCallback(async (txn, avgExpense) => {
     setExplaining(true)
     setExplainError('')
     setExplanation('')
     try {
-      const result = await generateExplainAnomaly(txn, avgExpense, data, provider)
+      const result = await generateExplainAnomaly(txn, avgExpense, data)
       setExplanation(result)
     } catch (err) {
       setExplainError(err.message || 'Failed to generate explanation')
     } finally {
       setExplaining(false)
     }
-  }, [data, provider])
+  }, [data])
 
   const clearExplanation = useCallback(() => {
     setExplanation('')

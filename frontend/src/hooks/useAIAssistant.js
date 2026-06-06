@@ -18,7 +18,7 @@ function saveHistory(messages) {
   } catch {}
 }
 
-export function useAIAssistant(data, aiProvider) {
+export function useAIAssistant(data) {
   const [messages, setMessages] = useState(loadHistory)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -39,7 +39,7 @@ export function useAIAssistant(data, aiProvider) {
     const context = buildFinancialContext(data)
 
     try {
-      const response = await generateAIResponse(aiProvider, text, context)
+      const response = await generateAIResponse(text, context)
       const assistantMessage = { role: 'assistant', content: response }
       setMessages((prev) => {
         const updated = [...prev, assistantMessage]
@@ -51,7 +51,7 @@ export function useAIAssistant(data, aiProvider) {
     } finally {
       setLoading(false)
     }
-  }, [data, aiProvider, loading])
+  }, [data, loading])
 
   const clearHistory = useCallback(() => {
     setMessages([])

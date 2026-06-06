@@ -25,7 +25,7 @@ function FullScreenLoader() {
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[var(--bg)]">
       <div className="flex flex-col items-center gap-4">
         <div className="h-8 w-8 rounded-full border-2 border-[var(--border)] border-t-[var(--accent)] animate-spin" />
-        <p className="text-sm text-[var(--muted)]">Loading Pulse Finance</p>
+        <p className="text-sm text-[var(--muted)]">Loading Finlytics</p>
       </div>
     </div>
   )

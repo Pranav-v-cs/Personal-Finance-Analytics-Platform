@@ -1,4 +1,5 @@
 import { Button } from '../components/ui/Button'
+import { FinlyticsLogo } from '../components/common/FinlyticsLogo'
 import { useAuth } from '../hooks/useAuth'
 import { useTheme } from '../hooks/useTheme'
 import { useRouter } from '../hooks/useRouter'
@@ -11,6 +12,21 @@ const NAV_ITEMS = [
   { label: 'Assistant', path: '/assistant' },
   { label: 'Settings', path: '/settings' },
 ]
+
+function Avatar({ name, email }) {
+  const initials = (name || email || '?')
+    .split(/[\s@]+/)
+    .map((s) => s[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--accent)] text-xs font-bold text-white flex-shrink-0" title={name || email}>
+      {initials}
+    </div>
+  )
+}
 
 export function AppLayout({ children }) {
   const { pathname, navigate } = useRouter()
@@ -26,9 +42,9 @@ export function AppLayout({ children }) {
     <div className="flex min-h-screen">
       <aside className="hidden lg:flex lg:flex-col w-56 border-r border-(--border) bg-(--surface) p-5 gap-8 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-(--accent) text-sm font-black text-white">PF</div>
+          <FinlyticsLogo size={10} />
           <div className="flex flex-col">
-            <div className="text-sm font-black tracking-tight">Pulse Finance</div>
+            <div className="text-sm font-black tracking-tight">Finlytics</div>
             <div className="text-xs text-(--muted)">Analytics platform</div>
           </div>
         </div>
@@ -58,7 +74,7 @@ export function AppLayout({ children }) {
 
         <div className="flex flex-col gap-2 pt-4 border-t border-(--border)">
           <Button variant="ghost" size="sm" onClick={toggleTheme}>
-            {theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+            {theme === 'dark' ? 'Light mode' : 'Dark mode'}
           </Button>
           <Button variant="secondary" size="sm" onClick={handleLogout}>
             Sign out
@@ -68,9 +84,12 @@ export function AppLayout({ children }) {
 
       <div className="flex flex-col flex-1 min-w-0">
         <header className="hidden lg:flex items-center justify-between px-6 py-3 border-b border-(--border) bg-(--bg)">
-          <div className="flex flex-col">
-            <span className="text-xs text-(--muted)">Signed in as</span>
-            <span className="text-sm font-bold">{user?.name || 'Account'}</span>
+          <div className="flex items-center gap-3">
+            <Avatar name={user?.name} email={user?.email} />
+            <div className="flex flex-col">
+              <span className="text-xs text-(--muted)">Signed in as</span>
+              <span className="text-sm font-bold">{user?.name || 'Account'}</span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={toggleTheme}>

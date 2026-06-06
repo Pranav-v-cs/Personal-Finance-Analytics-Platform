@@ -1,63 +1,60 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
-from app.services.ai_service import (
-    generate,
-    generate_openrouter,
-    generate_ollama,
-    PROVIDERS,
-)
-
-
-class TestProviderDispatch:
-    def test_valid_providers_exist(self):
-        assert "openrouter" in PROVIDERS
-        assert "ollama" in PROVIDERS
-        assert len(PROVIDERS) == 2
-
-    def test_unknown_provider_falls_back(self):
-        result = generate("unknown", "test prompt", {})
-        assert isinstance(result, str) and len(result) > 0
-
-    def test_generate_dispatches_all_providers(self):
-        for prov in PROVIDERS:
-            result = generate(prov, "test", {})
-            assert isinstance(result, str) and len(result) > 0
+from app.services.ai_service import generate, generate_openrouter
 
 
 class TestGenerateOpenRouter:
     def test_no_key_returns_message(self):
-        result = generate_openrouter("test", {})
-        assert "API key not configured" in result
-        assert "OPENROUTER_API_KEY" in result
+        with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", ""):
+            result = generate_openrouter("test", {})
+            assert "API key not configured" in result
+            assert "OPENROUTER_API_KEY" in result
+
+    def test_calls_openrouter_endpoint(self):
+        with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
+            with patch("app.services.ai_service.OpenAI") as mock_openai:
+                mock_client = MagicMock()
+                mock_openai.return_value = mock_client
+                mock_choice = MagicMock()
+                mock_choice.message.content = "Hello from OpenRouter"
+                mock_client.chat.completions.create.return_value.choices = [mock_choice]
+
+                result = generate_openrouter("Say hello", {})
+                assert result == "Hello from OpenRouter"
+                mock_client.chat.completions.create.assert_called_once()
+
+    def test_handles_api_error(self):
+        with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
+            with patch("app.services.ai_service.OpenAI") as mock_openai:
+                mock_client = MagicMock()
+                mock_openai.return_value = mock_client
+                mock_client.chat.completions.create.side_effect = Exception("API error")
+
+                result = generate_openrouter("test", {})
+                assert "OpenRouter error" in result
 
 
-class TestGenerateOllama:
-    @patch("httpx.post")
-    def test_calls_ollama_endpoint(self, mock_post):
-        mock_response = MagicMock()
-        mock_response.raise_for_status.return_value = None
-        mock_response.json.return_value = {"response": "Hello from Ollama"}
-        mock_post.return_value = mock_response
+class TestGenerate:
+    def test_returns_result_from_openrouter(self):
+        with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
+            with patch("app.services.ai_service.OpenAI") as mock_openai:
+                mock_client = MagicMock()
+                mock_openai.return_value = mock_client
+                mock_choice = MagicMock()
+                mock_choice.message.content = "Mocked response"
+                mock_client.chat.completions.create.return_value.choices = [mock_choice]
 
-        result = generate_ollama("Say hello", {})
-        assert result == "Hello from Ollama"
-        mock_post.assert_called_once()
+                result = generate("openrouter", "test", {})
+                assert result == "Mocked response"
 
-    @patch("httpx.post")
-    def test_handles_connection_error(self, mock_post):
-        from httpx import ConnectError
-        mock_post.side_effect = ConnectError("Connection refused")
+    def test_ignores_unrecognized_provider(self):
+        with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
+            with patch("app.services.ai_service.OpenAI") as mock_openai:
+                mock_client = MagicMock()
+                mock_openai.return_value = mock_client
+                mock_choice = MagicMock()
+                mock_choice.message.content = "Mocked response"
+                mock_client.chat.completions.create.return_value.choices = [mock_choice]
 
-        result = generate_ollama("test", {})
-        assert "Ollama error" in result
-
-    @patch("httpx.post")
-    def test_handles_missing_response_field(self, mock_post):
-        mock_response = MagicMock()
-        mock_response.raise_for_status.return_value = None
-        mock_response.json.return_value = {}
-        mock_post.return_value = mock_response
-
-        result = generate_ollama("test", {})
-        assert result == ""
+                result = generate("unknown", "test", {})
+                assert result == "Mocked response"

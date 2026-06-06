@@ -1,8 +1,8 @@
 import { api } from '../api'
 
-export async function generateAIResponse(provider, prompt, financialContext) {
+export async function generateAIResponse(prompt, financialContext) {
   const result = await api.post('/ai/generate', {
-    provider,
+    provider: 'openrouter',
     prompt,
     context: financialContext,
   })

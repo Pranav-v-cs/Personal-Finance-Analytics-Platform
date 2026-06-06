@@ -1,6 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 import { Button } from '../components/ui/Button'
 import { Card, CardContent } from '../components/ui/Card'
+import { FinlyticsLogo } from '../components/common/FinlyticsLogo'
 import { ChartBars } from '../components/common/ChartBars'
 import { Reveal } from '../components/common/Reveal'
 import { SectionTitle } from '../components/common/SectionTitle'
@@ -59,9 +60,9 @@ export default function LandingPage() {
 
       <nav className="flex items-center justify-between px-6 py-4 lg:px-12 max-w-6xl mx-auto w-full" aria-label="Primary">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)] text-sm font-black text-white">PF</div>
+          <FinlyticsLogo size={10} />
           <div className="flex flex-col">
-            <div className="text-sm font-black tracking-tight">Pulse Finance</div>
+            <div className="text-sm font-black tracking-tight">Finlytics</div>
             <div className="text-xs text-[var(--muted)]">Analytics platform</div>
           </div>
         </div>
@@ -74,7 +75,7 @@ export default function LandingPage() {
             <span className="text-xs uppercase tracking-[0.15em] text-[var(--accent)] font-semibold">Expense tracker for people who want signal, not clutter</span>
             <h1 className="text-[clamp(1.8rem,4vw,2.5rem)] font-black tracking-tight leading-tight">See spending clearly, act on it faster, and keep the interface calm.</h1>
             <p className="text-sm text-[var(--muted)] leading-relaxed">
-              Pulse Finance turns expense data into an executive-style dashboard with focused flows for tracking,
+              Finlytics turns expense data into an executive-style dashboard with focused flows for tracking,
               analysis, and account management.
             </p>
           </div>
@@ -204,7 +205,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="flex items-center justify-center gap-4 px-6 py-8 text-xs text-[var(--muted)]">
-        <span className="font-bold text-[var(--text)]">Pulse Finance</span>
+        <span className="font-bold text-[var(--text)]">Finlytics</span>
         <span>Built for clarity, not noise.</span>
       </footer>
     </div>

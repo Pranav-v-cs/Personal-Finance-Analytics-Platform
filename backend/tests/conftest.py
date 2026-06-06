@@ -4,8 +4,7 @@ os.environ["SECRET_KEY"] = "test-secret-key-not-for-production"
 os.environ["ALGORITHM"] = "HS256"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "30"
 os.environ["DATABASE_URL"] = "sqlite:///./test_finlytics.db"
-os.environ["GEMINI_API_KEY"] = ""
-os.environ["OPENAI_API_KEY"] = ""
+os.environ["OPENROUTER_API_KEY"] = "sk-test-mock-key"
 
 from datetime import datetime, timedelta, timezone
 

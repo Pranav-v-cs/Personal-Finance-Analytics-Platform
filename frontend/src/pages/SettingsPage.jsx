@@ -10,6 +10,21 @@ import { useDashboardLayout } from '../hooks/useDashboardLayout'
 import { PRESETS, PRESET_KEYS, DENSITY_MODES } from '../config/widgets'
 import { PageContainer, SectionContainer } from '../components/layout/PageContainer'
 
+function Avatar({ name, email }) {
+  const initials = (name || email || '?')
+    .split(/[\s@]+/)
+    .map((s) => s[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
+
+  return (
+    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[var(--accent)] text-xl font-bold text-white flex-shrink-0" title={name || email}>
+      {initials}
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
@@ -82,39 +97,6 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          {/* AI Provider */}
-          <Card>
-            <CardHeader>
-              <div className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">AI</div>
-              <CardTitle>AI Provider</CardTitle>
-              <CardDescription>Select your preferred AI provider for the assistant, insights, and reports.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-2">
-                <span className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">Provider</span>
-                <div className="flex flex-wrap gap-2">
-                  {['openrouter', 'ollama'].map((provider) => (
-                    <button
-                      key={provider}
-                      type="button"
-                      className={`rounded-full px-3 py-1.5 text-sm font-semibold border transition-colors duration-150 ${
-                        layout.aiProvider === provider
-                          ? 'border-[var(--accent)] bg-[rgba(124,116,232,0.12)] text-[var(--accent)]'
-                          : 'border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]'
-                      }`}
-                      onClick={() => layout.setAiProvider(provider)}
-                    >
-                      {provider === 'openrouter' ? 'OpenRouter' : 'Ollama'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <p className="text-xs text-[var(--muted)]">
-                Choose which AI provider powers your assistant, insights, and reports.
-              </p>
-            </CardContent>
-          </Card>
-
           {/* Theme */}
           <Card>
             <CardHeader>
@@ -137,9 +119,12 @@ export default function SettingsPage() {
               <CardDescription>Your account details and session.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col gap-4">
-              <div className="flex flex-col gap-0.5">
-                <span className="font-semibold">{user?.name || 'Unknown'}</span>
-                <span className="text-sm text-[var(--muted)]">{user?.email || 'No email available'}</span>
+              <div className="flex items-center gap-4">
+                <Avatar name={user?.name} email={user?.email} />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-semibold">{user?.name || 'Unknown'}</span>
+                  <span className="text-sm text-[var(--muted)]">{user?.email || 'No email available'}</span>
+                </div>
               </div>
               <Separator />
               <Button variant="secondary" onClick={handleLogout}>Sign out</Button>

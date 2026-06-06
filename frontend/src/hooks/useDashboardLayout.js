@@ -3,8 +3,6 @@ import { WIDGET_DEFS, WIDGET_IDS, PRESETS, ZONES } from '../config/widgets'
 
 const STORAGE_KEY = 'dashboard_layout'
 
-const DEFAULT_AI_PROVIDER = 'openrouter'
-
 function loadLayout() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
@@ -37,7 +35,6 @@ function getDefaultLayout() {
     hiddenWidgets: [],
     widgetSizes: {},
     density: 'comfortable',
-    aiProvider: DEFAULT_AI_PROVIDER,
     theme: 'dark',
   }
 }
@@ -170,13 +167,6 @@ export function useDashboardLayout() {
     [persist],
   )
 
-  const setAiProvider = useCallback(
-    (provider) => {
-      persist({ ...ref.current, aiProvider: provider })
-    },
-    [persist],
-  )
-
   const setTheme = useCallback(
     (theme) => {
       persist({ ...ref.current, theme })
@@ -191,7 +181,6 @@ export function useDashboardLayout() {
     hiddenWidgets: hiddenWidgetsData,
     preset: layout.preset,
     density: layout.density,
-    aiProvider: layout.aiProvider,
     widgetSizes: layout.widgetSizes,
     layoutTheme: layout.theme,
     reorder,
@@ -199,7 +188,6 @@ export function useDashboardLayout() {
     applyPreset,
     resetLayout,
     setDensity,
-    setAiProvider,
     setTheme,
     setWidgetSize,
     cycleWidgetSize,

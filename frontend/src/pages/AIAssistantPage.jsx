@@ -11,12 +11,9 @@ import { useDashboard } from '../hooks/useDashboard'
 import { useFinancialHealth } from '../hooks/useFinancialHealth'
 import { useSpendingMetrics } from '../hooks/useSpendingMetrics'
 import { useInsights } from '../hooks/useInsights'
-import { useDashboardLayout } from '../hooks/useDashboardLayout'
 import { useAIAssistant } from '../hooks/useAIAssistant'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { SUGGESTED_QUESTIONS } from '../services/ai/promptTemplates'
-import { generateFinancialReport } from '../services/ai/aiReports'
-import { generateSavingsOpportunities, generateGoalRecommendations } from '../services/ai/aiInsights'
 
 function AIMessage({ message, index = 0 }) {
   const isUser = message.role === 'user'
@@ -86,8 +83,6 @@ export default function AIAssistantPage() {
     categories: dashboard.categories,
     budgets: dashboard.budgets,
   })
-  const layout = useDashboardLayout()
-
   const data = useMemo(() => ({
     summary: dashboard.summary,
     monthly: dashboard.monthly,
@@ -104,7 +99,7 @@ export default function AIAssistantPage() {
     metrics,
   }), [dashboard, analyticsData, health, insights, metrics])
 
-  const { messages, loading, error, sendMessage, clearHistory } = useAIAssistant(data, layout.aiProvider)
+  const { messages, loading, error, sendMessage, clearHistory } = useAIAssistant(data)
   const [input, setInput] = useState('')
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
