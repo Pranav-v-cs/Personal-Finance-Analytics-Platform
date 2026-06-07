@@ -35,3 +35,7 @@ app.include_router(ai_router)
 @app.get("/", response_model=MessageResponse)
 def root():
     return {"message": "Personal Finance Analytics API"}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
