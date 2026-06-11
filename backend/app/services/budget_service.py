@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -6,6 +7,8 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.models import Budget, Expense
+
+logger = logging.getLogger(__name__)
 
 
 def _current_month_bounds():
@@ -62,7 +65,11 @@ def get_user_budget_or_404(db: Session, user_id: int, budget_id: int) -> Budget:
         .first()
     )
     if not budget:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Budget not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Budget with ID {budget_id} was not found. "
+                   "It may have been deleted or you may not have access to it.",
+        )
     return budget
 
 
@@ -77,23 +84,48 @@ def create_user_budget(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=f"A budget for {category} already exists",
+            detail=f"A budget for the category '{category}' already exists. "
+                   "Each category can only have one budget. Edit or delete the existing budget instead.",
         )
 
     budget = Budget(user_id=user_id, category=category, monthly_limit=monthly_limit)
     db.add(budget)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to create budget for user %d: %s", user_id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save the budget due to a database error. Please try again.",
+        )
     db.refresh(budget)
     return budget
 
 
 def update_user_budget(db: Session, budget: Budget, monthly_limit: Decimal) -> Budget:
     budget.monthly_limit = monthly_limit
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to update budget %d: %s", budget.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update the budget due to a database error. Please try again.",
+        )
     db.refresh(budget)
     return budget
 
 
 def delete_user_budget(db: Session, budget: Budget) -> None:
     db.delete(budget)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to delete budget %d: %s", budget.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete the budget due to a database error. Please try again.",
+        )

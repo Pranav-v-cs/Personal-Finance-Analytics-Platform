@@ -1,6 +1,6 @@
 from passlib.context import CryptContext # type: ignore
 from datetime import datetime, timedelta, timezone
-from jose import jwt, JWTError # type: ignore
+from jose import jwt, ExpiredSignatureError, JWTError # type: ignore
 
 from app.core.config import settings
 from fastapi.security import OAuth2PasswordBearer
@@ -55,5 +55,7 @@ def decode_access_token(token: str):
 
         return payload
 
+    except ExpiredSignatureError:
+        return "expired"
     except JWTError:
         return None

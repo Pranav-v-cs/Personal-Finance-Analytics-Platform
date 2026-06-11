@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 
 from app.database.models import Expense
 from app.schemas.expense import ExpenseCreate, ExpenseUpdate
+
+logger = logging.getLogger(__name__)
 
 
 def create_expense(
@@ -18,7 +21,15 @@ def create_expense(
         **expense_data.model_dump(exclude_unset=True)
     )
     db.add(expense)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to create expense for user %d: %s", user_id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save the expense due to a database error. Please try again.",
+        )
     db.refresh(expense)
     return expense
 
@@ -35,13 +46,15 @@ def list_user_expenses_filtered(
     if start_date and end_date and start_date > end_date:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="start_date must be on or before end_date"
+            detail=f"The start date ({start_date}) cannot be after the end date ({end_date}). "
+                   "Please ensure the start date is on or before the end date."
         )
 
     if min_amount is not None and max_amount is not None and min_amount > max_amount:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="min_amount must be less than or equal to max_amount"
+            detail=f"The minimum amount (${min_amount}) cannot exceed the maximum amount (${max_amount}). "
+                   "Please ensure the minimum amount is less than or equal to the maximum amount."
         )
 
     query = db.query(Expense).filter(Expense.user_id == user_id)
@@ -94,7 +107,8 @@ def get_user_expense_or_404(
     if expense is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Expense not found"
+            detail=f"Expense with ID {expense_id} was not found. "
+                   "It may have been deleted or you may not have access to it."
         )
     return expense
 
@@ -109,7 +123,15 @@ def update_user_expense(
     for field_name, value in updates.items():
         setattr(expense, field_name, value)
 
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to update expense %d: %s", expense.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update the expense due to a database error. Please try again.",
+        )
     db.refresh(expense)
     return expense
 
@@ -119,4 +141,12 @@ def delete_user_expense(
     expense: Expense
 ) -> None:
     db.delete(expense)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to delete expense %d: %s", expense.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete the expense due to a database error. Please try again.",
+        )
