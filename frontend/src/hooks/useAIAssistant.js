@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { generateAIResponse } from '../services/ai/aiService'
 import { buildFinancialContext } from '../services/ai/financialContextBuilder'
 
@@ -15,14 +15,15 @@ function loadHistory() {
 function saveHistory(messages) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)))
-  } catch {}
+  } catch {
+    localStorage.removeItem(STORAGE_KEY)
+  }
 }
 
 export function useAIAssistant(data) {
   const [messages, setMessages] = useState(loadHistory)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const abortRef = useRef(null)
 
   const sendMessage = useCallback(async (text) => {
     if (!text.trim() || loading) return
@@ -36,10 +37,8 @@ export function useAIAssistant(data) {
     setLoading(true)
     setError('')
 
-    const context = buildFinancialContext(data)
-
     try {
-      const response = await generateAIResponse(text, context)
+      const response = await generateAIResponse(text, buildFinancialContext(data))
       const assistantMessage = { role: 'assistant', content: response }
       setMessages((prev) => {
         const updated = [...prev, assistantMessage]
@@ -56,9 +55,7 @@ export function useAIAssistant(data) {
   const clearHistory = useCallback(() => {
     setMessages([])
     setError('')
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch {}
+    localStorage.removeItem(STORAGE_KEY)
   }, [])
 
   return { messages, loading, error, sendMessage, clearHistory }

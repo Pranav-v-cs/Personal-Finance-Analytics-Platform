@@ -18,10 +18,7 @@ function BudgetSkeleton() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {[1, 2, 3].map((i) => (
-        <Card key={i}>
-          <SkeletonLine className="w-32 mb-3" />
-          <Skeleton className="h-2 w-full rounded" />
-        </Card>
+        <Card key={i}><SkeletonLine className="w-32 mb-3" /><Skeleton className="h-2 w-full rounded" /></Card>
       ))}
     </div>
   )
@@ -34,12 +31,33 @@ function getBudgetStatus(pct) {
   return { label: 'Healthy', tone: 'success', health: 'healthy' }
 }
 
+function DonutChart({ pct, strokeColor }) {
+  return (
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+      <circle cx="60" cy="60" r="52" fill="none" stroke={strokeColor} strokeWidth="10" strokeDasharray={`${pct * 3.266} 326.6`} strokeLinecap="round" transform="rotate(-90 60 60)" />
+      <text x="60" y="56" textAnchor="middle" fill="var(--text)" fontSize="1.5rem" fontWeight="800" fontFamily="var(--font-mono)">{Math.round(pct)}%</text>
+      <text x="60" y="74" textAnchor="middle" fill="var(--muted)" fontSize="0.65rem">used</text>
+    </svg>
+  )
+}
+
+function DonutChartGoal({ pct, strokeColor, label }) {
+  return (
+    <svg viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
+      <circle cx="60" cy="60" r="52" fill="none" stroke={strokeColor} strokeWidth="10" strokeDasharray={`${pct * 3.266} 326.6`} strokeLinecap="round" transform="rotate(-90 60 60)" />
+      <text x="60" y="56" textAnchor="middle" fill="var(--text)" fontSize="1.5rem" fontWeight="800" fontFamily="var(--font-mono)">{Math.round(pct)}%</text>
+      <text x="60" y="74" textAnchor="middle" fill="var(--muted)" fontSize="0.65rem">{label}</text>
+    </svg>
+  )
+}
+
 function BudgetCard({ budget, onEdit, onDelete, onExplain, explaining, isExplaining }) {
   const current = Number(budget.current_spend || 0)
   const limit = Number(budget.monthly_limit)
   const pct = limit > 0 ? Math.min((current / limit) * 100, 100) : 0
   const status = getBudgetStatus(limit > 0 ? (current / limit) * 100 : 0)
-  const remaining = Math.max(limit - current, 0)
 
   return (
     <Card>
@@ -50,72 +68,43 @@ function BudgetCard({ budget, onEdit, onDelete, onExplain, explaining, isExplain
             <Badge variant={status.tone}>{status.label}</Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onExplain(budget)} disabled={isExplaining}>
-              {isExplaining ? '...' : 'Explain'}
-            </Button>
+            <Button variant="ghost" size="sm" onClick={() => onExplain(budget)} disabled={isExplaining}>{isExplaining ? '...' : 'Explain'}</Button>
             <Button variant="ghost" size="sm" onClick={() => onEdit(budget)}>Edit</Button>
             <Button variant="danger" size="sm" onClick={() => onDelete(budget)}>Delete</Button>
           </div>
         </div>
-        {explaining && (
-          <div className="mt-2 pt-2 border-t border-[var(--border)]">
-            <p className="text-xs leading-relaxed whitespace-pre-wrap text-[var(--muted)]">{explaining}</p>
-          </div>
-        )}
+        {explaining && <div className="mt-2 pt-2 border-t border-[var(--border)]"><p className="text-xs leading-relaxed whitespace-pre-wrap text-[var(--muted)]">{explaining}</p></div>}
       </CardHeader>
-
       <CardContent>
-      <div className="flex justify-center py-2">
-        <svg viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-          <circle
-            cx="60" cy="60" r="52"
-            fill="none"
-            stroke={status.health === 'critical' ? '#ef5350' : status.health === 'warning' ? '#f7b14a' : '#66bb6a'}
-            strokeWidth="10"
-            strokeDasharray={`${pct * 3.266} 326.6`}
-            strokeLinecap="round"
-            transform="rotate(-90 60 60)"
-          />
-          <text x="60" y="56" textAnchor="middle" fill="var(--text)" fontSize="1.5rem" fontWeight="800" fontFamily="var(--font-mono)">
-            {Math.round(pct)}%
-          </text>
-          <text x="60" y="74" textAnchor="middle" fill="var(--muted)" fontSize="0.65rem">
-            used
-          </text>
-        </svg>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">Spent</span>
-          <span className="font-semibold font-mono">{formatCurrency(current)}</span>
+        <div className="flex justify-center py-2">
+          <DonutChart pct={pct} strokeColor={status.health === 'critical' ? '#ef5350' : status.health === 'warning' ? '#f7b14a' : '#66bb6a'} />
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">Limit</span>
-          <span className="font-semibold font-mono">{formatCurrency(limit)}</span>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Spent</span>
+            <span className="font-semibold font-mono">{formatCurrency(current)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Limit</span>
+            <span className="font-semibold font-mono">{formatCurrency(limit)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Remaining</span>
+            <span className={`font-semibold font-mono ${current >= limit ? 'text-[var(--accent)]' : ''}`}>
+              {formatCurrency(Math.max(limit - current, 0))}
+            </span>
+          </div>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">Remaining</span>
-          <span className={`font-semibold font-mono ${remaining === 0 ? 'text-[var(--accent)]' : ''}`}>
-            {formatCurrency(remaining)}
-          </span>
-        </div>
-      </div>
-
-      <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
+        <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
+          <div className="h-full rounded-full transition-all" style={{
             width: `${Math.min(pct, 100)}%`,
             background: current > limit
               ? 'linear-gradient(90deg, #ef5350, #c62828)'
               : pct >= 75
                 ? 'linear-gradient(90deg, #f7b14a, #ef5350)'
                 : 'linear-gradient(90deg, var(--accent), var(--accentStrong))',
-          }}
-        />
-      </div>
+          }} />
+        </div>
       </CardContent>
     </Card>
   )
@@ -154,61 +143,33 @@ function GoalCard({ goal, onEdit, onDelete, onAddFunds }) {
           </div>
         </div>
       </CardHeader>
-
       <CardContent>
-      <div className="flex justify-center py-2">
-        <svg viewBox="0 0 120 120">
-          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="10" />
-          <circle
-            cx="60" cy="60" r="52"
-            fill="none"
-            stroke={pct >= 100 ? '#66bb6a' : pct >= 75 ? '#42a5f5' : '#f7b14a'}
-            strokeWidth="10"
-            strokeDasharray={`${pct * 3.266} 326.6`}
-            strokeLinecap="round"
-            transform="rotate(-90 60 60)"
-          />
-          <text x="60" y="56" textAnchor="middle" fill="var(--text)" fontSize="1.5rem" fontWeight="800" fontFamily="var(--font-mono)">
-            {Math.round(pct)}%
-          </text>
-          <text x="60" y="74" textAnchor="middle" fill="var(--muted)" fontSize="0.65rem">
-            saved
-          </text>
-        </svg>
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">Saved</span>
-          <span className="font-semibold font-mono">{formatCurrency(current)}</span>
+        <div className="flex justify-center py-2">
+          <DonutChartGoal pct={pct} strokeColor={pct >= 100 ? '#66bb6a' : pct >= 75 ? '#42a5f5' : '#f7b14a'} label="saved" />
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-[var(--muted)]">Target</span>
-          <span className="font-semibold font-mono">{formatCurrency(target)}</span>
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Saved</span>
+            <span className="font-semibold font-mono">{formatCurrency(current)}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-[var(--muted)]">Target</span>
+            <span className="font-semibold font-mono">{formatCurrency(target)}</span>
+          </div>
+          {dailyNeeded !== null && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-[var(--muted)]">Daily needed</span>
+              <span className="text-[var(--accent)] font-bold">{formatCurrency(dailyNeeded)}</span>
+            </div>
+          )}
+          {pct >= 100 && <div className="flex items-center justify-between text-sm"><span className="text-[var(--muted)]">Status</span><span className="font-semibold font-mono" style={{ color: '#66bb6a', fontWeight: 700 }}>Goal reached!</span></div>}
         </div>
-        {dailyNeeded !== null && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-[var(--muted)]">Daily needed</span>
-            <span className="text-[var(--accent)] font-bold">{formatCurrency(dailyNeeded)}</span>
-          </div>
-        )}
-        {pct >= 100 && (
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-[var(--muted)]">Status</span>
-            <span className="font-semibold font-mono" style={{ color: '#66bb6a', fontWeight: 700 }}>Goal reached!</span>
-          </div>
-        )}
-      </div>
-
-      <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{
+        <div className="h-2 rounded-full bg-[rgba(255,255,255,0.06)] overflow-hidden mt-4">
+          <div className="h-full rounded-full transition-all" style={{
             width: `${Math.min(pct, 100)}%`,
             background: pct >= 100 ? 'linear-gradient(90deg, #66bb6a, #2e7d32)' : 'linear-gradient(90deg, var(--accent), #42a5f5)',
-          }}
-        />
-      </div>
+          }} />
+        </div>
       </CardContent>
     </Card>
   )
@@ -238,18 +199,9 @@ function GoalForm({ onSubmit, onCancel, initial }) {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="goal-name">Goal name</Label>
-        <Input id="goal-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="goal-amount">Target amount (₹)</Label>
-        <Input id="goal-amount" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="goal-date">Target date (optional)</Label>
-        <Input id="goal-date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} />
-      </div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="goal-name">Goal name</Label><Input id="goal-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" /></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="goal-amount">Target amount (₹)</Label><Input id="goal-amount" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" /></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="goal-date">Target date (optional)</Label><Input id="goal-date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create goal'}</Button>
@@ -281,10 +233,7 @@ function AddFundsForm({ goal, onSubmit, onCancel }) {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <p className="text-sm">Adding funds to <strong>{goal.name}</strong></p>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="add-funds-amount">Amount to add (₹)</Label>
-        <Input id="add-funds-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" />
-      </div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="add-funds-amount">Amount to add (₹)</Label><Input id="add-funds-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add funds'}</Button>
@@ -317,19 +266,11 @@ function BudgetForm({ categories, onSubmit, onCancel, initial }) {
 
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="budget-category">Category</Label>
-        <Select id="budget-category" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!initial}>
-          <option value="">Select category</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </Select>
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label htmlFor="budget-limit">Monthly limit (₹)</Label>
-        <Input id="budget-limit" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" />
-      </div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="budget-category">Category</Label><Select id="budget-category" value={category} onChange={(e) => setCategory(e.target.value)} disabled={!!initial}>
+        <option value="">Select category</option>
+        {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+      </Select></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="budget-limit">Monthly limit (₹)</Label><Input id="budget-limit" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create budget'}</Button>
@@ -339,17 +280,10 @@ function BudgetForm({ categories, onSubmit, onCancel, initial }) {
   )
 }
 
-function getCategoryStrings(categories) {
-  return (categories || []).map((c) => (typeof c === 'string' ? c : c.category))
-}
-
 export default function BudgetsPage() {
-  const { budgets, goals, loading, error, refreshBudgets, createBudget, updateBudget, deleteBudget, createGoal, updateGoal, deleteGoal, budgetStats } = useBudgets()
+  const { budgets, goals, loading, error, refreshBudgets, createBudget, updateBudget, deleteBudget, createGoal, updateGoal, deleteGoal } = useBudgets()
   const data = useMemo(() => ({ summary: { totalExpenses: 0 }, budgets, goals }), [budgets, goals])
-  const {
-    explanation, explaining, explainError,
-    explainBudget, clearExplanation,
-  } = useAIExplain(data)
+  const { explanation, explaining, explainBudget, clearExplanation } = useAIExplain(data)
   const [explainingBudgetId, setExplainingBudgetId] = useState(null)
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -358,279 +292,101 @@ export default function BudgetsPage() {
   const [editingGoal, setEditingGoal] = useState(null)
   const [fundingGoal, setFundingGoal] = useState(null)
 
-  const categoryList = getCategoryStrings(categories)
+  const categoryList = useMemo(() => (categories || []).map((c) => (typeof c === 'string' ? c : c.category)), [categories])
 
   const { totalBudgeted, totalSpent, budgetCount, budgetUtilization } = useMemo(() => {
     let spent = 0; let limit = 0
-    budgets.forEach((b) => {
-      spent += Number(b.current_spend || 0)
-      limit += Number(b.monthly_limit || 0)
-    })
-    return {
-      totalBudgeted: limit,
-      totalSpent: spent,
-      budgetCount: budgets.length,
-      budgetUtilization: limit > 0 ? Math.round((spent / limit) * 100) : 0,
-    }
+    budgets.forEach((b) => { spent += Number(b.current_spend || 0); limit += Number(b.monthly_limit || 0) })
+    return { totalBudgeted: limit, totalSpent: spent, budgetCount: budgets.length, budgetUtilization: limit > 0 ? Math.round((spent / limit) * 100) : 0 }
   }, [budgets])
 
   const activeGoals = useMemo(() => {
-    const completed = []
-    const active = []
+    const completed = []; const active = []
     goals.forEach((g) => {
       const pct = Number(g.target_amount) > 0 ? (Number(g.current_amount || 0) / Number(g.target_amount)) * 100 : 0
-      if (pct >= 100) completed.push(g)
-      else active.push(g)
+      if (pct >= 100) completed.push(g); else active.push(g)
     })
     return { active, completed }
   }, [goals])
 
-  const handleCreate = async (cat, limit) => {
-    await createBudget(cat, limit)
-    setShowForm(false)
-    refreshBudgets()
-  }
-
-  const handleUpdate = async (cat, limit) => {
-    await updateBudget(editing.id, limit)
-    setEditing(null)
-    refreshBudgets()
-  }
-
-  const handleDelete = async (budget) => {
-    if (!window.confirm(`Delete budget for ${budget.category}?`)) return
-    await deleteBudget(budget.id)
-    refreshBudgets()
-  }
-
-  const handleGoalCreate = async (data) => {
-    await createGoal({
-      ...data,
-      currentAmount: 0,
-    })
-    setShowGoalForm(false)
-    refreshBudgets()
-  }
-
-  const handleGoalUpdate = async (data) => {
-    await updateGoal(editingGoal.id, {
-      targetAmount: data.targetAmount,
-      targetDate: data.targetDate,
-    })
-    setEditingGoal(null)
-    refreshBudgets()
-  }
-
-  const handleGoalDelete = async (goal) => {
-    if (!window.confirm(`Delete goal "${goal.name}"?`)) return
-    await deleteGoal(goal.id)
-    refreshBudgets()
-  }
-
-  const handleGoalAddFunds = async (id, amount) => {
-    const goal = goals.find((g) => g.id === id)
-    const current = Number(goal?.current_amount || 0)
-    await updateGoal(id, { currentAmount: current + amount })
-    setFundingGoal(null)
-    refreshBudgets()
-  }
+  const availableCategories = useMemo(() => {
+    const budgetedCategories = budgets.map((b) => b.category)
+    return categoryList.filter((c) => !budgetedCategories.includes(c))
+  }, [budgets, categoryList])
 
   useEffect(() => {
-    async function load() {
-      try {
-        const cats = await listCategories()
-        setCategories(Array.isArray(cats) ? cats : [])
-      } catch { /* ignore */ }
-    }
-    load()
+    listCategories().then((cats) => setCategories(Array.isArray(cats) ? cats : [])).catch(() => {})
   }, [])
 
-  const budgetedCategories = budgets.map((b) => b.category)
-  const availableCategories = categoryList.filter((c) => !budgetedCategories.includes(c))
-
   if (loading) {
-    return (
-      <PageContainer>
-        <PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." />
-        <BudgetSkeleton />
-      </PageContainer>
-    )
+    return (<PageContainer><PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." /><BudgetSkeleton /></PageContainer>)
   }
 
   if (error) {
-    return (
-      <PageContainer>
-        <PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." />
-        <InlineError message={error} />
-      </PageContainer>
-    )
+    return (<PageContainer><PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." /><InlineError message={error} /></PageContainer>)
   }
+
+  const handleCreate = async (cat, limit) => { await createBudget(cat, limit); setShowForm(false); refreshBudgets() }
+  const handleUpdate = async (cat, limit) => { await updateBudget(editing.id, limit); setEditing(null); refreshBudgets() }
+  const handleDelete = async (budget) => { if (!window.confirm(`Delete budget for ${budget.category}?`)) return; await deleteBudget(budget.id); refreshBudgets() }
+  const handleGoalCreate = async (data) => { await createGoal({ ...data, currentAmount: 0 }); setShowGoalForm(false); refreshBudgets() }
+  const handleGoalUpdate = async (data) => { await updateGoal(editingGoal.id, { targetAmount: data.targetAmount, targetDate: data.targetDate }); setEditingGoal(null); refreshBudgets() }
+  const handleGoalDelete = async (goal) => { if (!window.confirm(`Delete goal "${goal.name}"?`)) return; await deleteGoal(goal.id); refreshBudgets() }
+  const handleGoalAddFunds = async (id, amount) => { const goal = goals.find((g) => g.id === id); await updateGoal(id, { currentAmount: Number(goal?.current_amount || 0) + amount }); setFundingGoal(null); refreshBudgets() }
 
   return (
     <PageContainer>
       <div className="flex flex-col gap-8">
-      <PageHeader
-        eyebrow="Planning"
-        title="Budgets & goals"
-        description="Set spending limits and track financial goals."
-        actions={
-          <Button onClick={() => { setShowForm(true); setEditing(null) }} disabled={availableCategories.length === 0}>
-            New budget
-          </Button>
-        }
-      />
+        <PageHeader eyebrow="Planning" title="Budgets & goals" description="Set spending limits and track financial goals." actions={<Button onClick={() => { setShowForm(true); setEditing(null) }} disabled={availableCategories.length === 0}>New budget</Button>} />
 
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BudgetForm categories={availableCategories} onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
-          </CardContent>
-        </Card>
-      )}
+        {showForm && <Card><CardHeader><CardTitle>Create budget</CardTitle></CardHeader><CardContent><BudgetForm categories={availableCategories} onSubmit={handleCreate} onCancel={() => setShowForm(false)} /></CardContent></Card>}
+        {editing && <Card><CardHeader><CardTitle>Edit budget</CardTitle></CardHeader><CardContent><BudgetForm categories={[editing.category]} onSubmit={handleUpdate} onCancel={() => setEditing(null)} initial={editing} /></CardContent></Card>}
 
-      {editing && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit budget</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <BudgetForm categories={[editing.category]} onSubmit={handleUpdate} onCancel={() => setEditing(null)} initial={editing} />
-          </CardContent>
-        </Card>
-      )}
-
-      {budgets.length === 0 && !showForm ? (
-        <Card>
-          <CardContent>
-            <p className="text-sm text-[var(--muted)] text-center py-8">
-              Create a budget to start tracking spending targets and improve your Financial Health score.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <Card>
-            <CardContent className="grid grid-cols-3 gap-4">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-[var(--muted)] font-medium">Total spent</span>
-                <span className="text-xl font-extrabold tracking-tight">{formatCurrency(totalSpent)}</span>
-                <span className="text-[10px] text-[var(--muted)]">of {formatCurrency(totalBudgeted)} budgeted</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-[var(--muted)] font-medium">Utilization</span>
-                <span className="text-xl font-extrabold tracking-tight">{budgetUtilization}%</span>
-                <span className="text-[10px] text-[var(--muted)]">overall budget used</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="text-xs text-[var(--muted)] font-medium">Active budgets</span>
-                <span className="text-xl font-extrabold tracking-tight">{budgetCount}</span>
-                <span className="text-[10px] text-[var(--muted)]">categories tracked</span>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {budgets.length === 0 && !showForm ? (
+          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Create a budget to start tracking spending targets and improve your Financial Health score.</p></CardContent></Card>
+        ) : (
+          <>
+            <Card><CardContent className="grid grid-cols-3 gap-4">
+              <div className="flex flex-col gap-0.5"><span className="text-xs text-[var(--muted)] font-medium">Total spent</span><span className="text-xl font-extrabold tracking-tight">{formatCurrency(totalSpent)}</span><span className="text-[10px] text-[var(--muted)]">of {formatCurrency(totalBudgeted)} budgeted</span></div>
+              <div className="flex flex-col gap-0.5"><span className="text-xs text-[var(--muted)] font-medium">Utilization</span><span className="text-xl font-extrabold tracking-tight">{budgetUtilization}%</span><span className="text-[10px] text-[var(--muted)]">overall budget used</span></div>
+              <div className="flex flex-col gap-0.5"><span className="text-xs text-[var(--muted)] font-medium">Active budgets</span><span className="text-xl font-extrabold tracking-tight">{budgetCount}</span><span className="text-[10px] text-[var(--muted)]">categories tracked</span></div>
+            </CardContent></Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {budgets.map((budget) => (
-              <BudgetCard
-                key={budget.id}
-                budget={budget}
-                onEdit={setEditing}
-                onDelete={handleDelete}
-                onExplain={(b) => { clearExplanation(); setExplainingBudgetId(b.id); explainBudget(b) }}
-                explaining={explainingBudgetId === budget.id ? explanation : null}
-                isExplaining={explaining && explainingBudgetId === budget.id}
-              />
-            ))}
-          </div>
-        </>
-      )}
+                <BudgetCard key={budget.id} budget={budget} onEdit={setEditing} onDelete={handleDelete}
+                  onExplain={(b) => { clearExplanation(); setExplainingBudgetId(b.id); explainBudget(b) }}
+                  explaining={explainingBudgetId === budget.id ? explanation : null}
+                  isExplaining={explaining && explainingBudgetId === budget.id}
+                />
+              ))}
+            </div>
+          </>
+        )}
 
-      <Separator />
+        <Separator />
 
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-lg font-bold tracking-tight">Goals</h2>
-          <p className="text-sm text-[var(--muted)]">Set savings targets and track your progress.</p>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-col gap-1"><h2 className="text-lg font-bold tracking-tight">Goals</h2><p className="text-sm text-[var(--muted)]">Set savings targets and track your progress.</p></div>
+          <Button onClick={() => { setShowGoalForm(true); setEditingGoal(null); setFundingGoal(null) }}>New goal</Button>
         </div>
-        <Button onClick={() => { setShowGoalForm(true); setEditingGoal(null); setFundingGoal(null) }}>
-          New goal
-        </Button>
+
+        {showGoalForm && <Card><CardHeader><CardTitle>Create goal</CardTitle></CardHeader><CardContent><GoalForm onSubmit={handleGoalCreate} onCancel={() => setShowGoalForm(false)} /></CardContent></Card>}
+        {editingGoal && <Card><CardHeader><CardTitle>Edit goal</CardTitle></CardHeader><CardContent><GoalForm onSubmit={handleGoalUpdate} onCancel={() => setEditingGoal(null)} initial={editingGoal} /></CardContent></Card>}
+        {fundingGoal && <Card><CardHeader><CardTitle>Add funds</CardTitle></CardHeader><CardContent><AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} /></CardContent></Card>}
+
+        {goals.length === 0 && !showGoalForm ? (
+          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Set a savings goal to improve your Financial Health score and track progress toward your financial targets.</p></CardContent></Card>
+        ) : (
+          <>
+            {activeGoals.active.length > 0 && <><div><h3 className="text-base font-extrabold tracking-tight">Active goals</h3></div><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{activeGoals.active.map((goal) => <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />)}</div></>}
+            {activeGoals.completed.length > 0 && (
+              <details><summary className="cursor-pointer text-sm"><span style={{ fontWeight: 600 }}>Completed goals ({activeGoals.completed.length})</span></summary>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">{activeGoals.completed.map((goal) => <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />)}</div>
+              </details>
+            )}
+          </>
+        )}
       </div>
-
-      {showGoalForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Create goal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GoalForm onSubmit={handleGoalCreate} onCancel={() => setShowGoalForm(false)} />
-          </CardContent>
-        </Card>
-      )}
-
-      {editingGoal && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Edit goal</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <GoalForm onSubmit={handleGoalUpdate} onCancel={() => setEditingGoal(null)} initial={editingGoal} />
-          </CardContent>
-        </Card>
-      )}
-
-      {fundingGoal && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Add funds</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} />
-          </CardContent>
-        </Card>
-      )}
-
-      {goals.length === 0 && !showGoalForm ? (
-        <Card>
-          <CardContent>
-            <p className="text-sm text-[var(--muted)] text-center py-8">
-              Set a savings goal to improve your Financial Health score and track progress toward your financial targets.
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          {activeGoals.active.length > 0 && (
-            <>
-              <div>
-                <h3 className="text-base font-extrabold tracking-tight">Active goals</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {activeGoals.active.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
-                ))}
-              </div>
-            </>
-          )}
-          {activeGoals.completed.length > 0 && (
-            <details>
-              <summary className="cursor-pointer text-sm">
-                <span style={{ fontWeight: 600 }}>
-                  Completed goals ({activeGoals.completed.length})
-                </span>
-              </summary>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
-                {activeGoals.completed.map((goal) => (
-                  <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />
-                ))}
-              </div>
-            </details>
-          )}
-        </>
-      )}
-    </div>
     </PageContainer>
   )
 }

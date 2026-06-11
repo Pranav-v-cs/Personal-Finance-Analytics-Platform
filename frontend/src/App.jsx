@@ -6,8 +6,6 @@ import { RouterProvider } from './routes/router'
 import { useAuth } from './hooks/useAuth'
 import { useRouter } from './hooks/useRouter'
 import { AppLayout } from './layouts/AppLayout'
-import { Card } from './components/ui/Card'
-import { Button } from './components/ui/Button'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const AuthPage = lazy(() => import('./pages/AuthPage'))
@@ -18,7 +16,18 @@ const BudgetsPage = lazy(() => import('./pages/BudgetsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const AIAssistantPage = lazy(() => import('./pages/AIAssistantPage'))
 
-const protectedRoutes = new Set(['/dashboard', '/expenses', '/analytics', '/budgets', '/settings', '/assistant'])
+const PROTECTED_ROUTES = new Set(['/dashboard', '/expenses', '/analytics', '/budgets', '/settings', '/assistant'])
+
+const ROUTE_MAP = {
+  '/': LandingPage,
+  '/auth': AuthPage,
+  '/dashboard': DashboardPage,
+  '/expenses': ExpensesPage,
+  '/analytics': AnalyticsPage,
+  '/budgets': BudgetsPage,
+  '/settings': SettingsPage,
+  '/assistant': AIAssistantPage,
+}
 
 function FullScreenLoader() {
   return (
@@ -33,15 +42,19 @@ function FullScreenLoader() {
 
 function NotFoundPage() {
   const { navigate } = useRouter()
-
   return (
     <div className="flex items-center justify-center min-h-screen p-6">
-      <Card className="max-w-sm w-full p-8 text-center flex flex-col items-center gap-4">
+      <div className="max-w-sm w-full p-8 text-center flex flex-col items-center gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]">
         <span className="text-xs uppercase tracking-[0.15em] text-[var(--accent)] font-semibold">404</span>
         <h1 className="text-xl font-black tracking-tight">Page not found</h1>
         <p className="text-sm text-[var(--muted)]">The route you requested does not exist.</p>
-        <Button onClick={() => navigate('/dashboard')}>Go to dashboard</Button>
-      </Card>
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-semibold bg-[var(--accent)] text-white hover:opacity-90 transition-opacity"
+        >
+          Go to dashboard
+        </button>
+      </div>
     </div>
   )
 }
@@ -52,34 +65,23 @@ function AppRoutes() {
 
   useEffect(() => {
     if (!ready) return
-    if (protectedRoutes.has(pathname) && !isAuthenticated) {
+    if (PROTECTED_ROUTES.has(pathname) && !isAuthenticated) {
       navigate('/auth', { replace: true })
-      return
-    }
-    if (pathname === '/auth' && isAuthenticated) {
+    } else if (pathname === '/auth' && isAuthenticated) {
       navigate('/dashboard', { replace: true })
     }
   }, [isAuthenticated, navigate, pathname, ready])
 
-  if (!ready) {
-    return <FullScreenLoader />
-  }
+  if (!ready) return <FullScreenLoader />
 
-  let page = <NotFoundPage />
-  if (pathname === '/') page = <LandingPage />
-  if (pathname === '/auth') page = <AuthPage />
-  if (pathname === '/dashboard') page = <DashboardPage />
-  if (pathname === '/expenses') page = <ExpensesPage />
-  if (pathname === '/analytics') page = <AnalyticsPage />
-  if (pathname === '/budgets') page = <BudgetsPage />
-  if (pathname === '/settings') page = <SettingsPage />
-  if (pathname === '/assistant') page = <AIAssistantPage />
+  const Page = ROUTE_MAP[pathname]
+  const needsLayout = pathname !== '/' && pathname !== '/auth'
 
-  if (pathname === '/' || pathname === '/auth') {
-    return <Suspense fallback={<FullScreenLoader />}>{page}</Suspense>
-  }
-
-  return <Suspense fallback={<FullScreenLoader />}><AppLayout>{page}</AppLayout></Suspense>
+  return (
+    <Suspense fallback={<FullScreenLoader />}>
+      {needsLayout ? <AppLayout>{Page ? <Page /> : <NotFoundPage />}</AppLayout> : Page ? <Page /> : <NotFoundPage />}
+    </Suspense>
+  )
 }
 
 function AppShell() {

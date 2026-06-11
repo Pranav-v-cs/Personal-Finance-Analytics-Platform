@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -5,6 +6,16 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.database.models import Budget, Expense
+
+
+def _current_month_bounds():
+    now = datetime.now(timezone.utc)
+    start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    if start.month == 12:
+        end = start.replace(year=start.year + 1, month=1)
+    else:
+        end = start.replace(month=start.month + 1)
+    return start, end
 
 
 def get_user_budgets(db: Session, user_id: int) -> list[dict]:
@@ -15,9 +26,7 @@ def get_user_budgets(db: Session, user_id: int) -> list[dict]:
         .all()
     )
 
-    now = func.now()
-    current_month_start = func.date(now, "start of month")
-    current_month_end = func.date(now, "start of month", "+1 month", "-1 day")
+    month_start, month_end = _current_month_bounds()
 
     spend_rows = (
         db.query(
@@ -26,8 +35,8 @@ def get_user_budgets(db: Session, user_id: int) -> list[dict]:
         )
         .filter(
             Expense.user_id == user_id,
-            Expense.transaction_date >= current_month_start,
-            Expense.transaction_date <= current_month_end,
+            Expense.transaction_date >= month_start,
+            Expense.transaction_date < month_end,
         )
         .group_by(Expense.category)
         .all()

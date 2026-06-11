@@ -5,13 +5,7 @@ import { listCategories } from '../services/categoryService'
 export function useExpenses() {
   const [expenses, setExpenses] = useState([])
   const [categories, setCategories] = useState([])
-  const [filters, setFilters] = useState({
-    category: '',
-    startDate: '',
-    endDate: '',
-    minAmount: '',
-    maxAmount: '',
-  })
+  const [filters, setFilters] = useState({ category: '', startDate: '', endDate: '', minAmount: '', maxAmount: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -19,13 +13,8 @@ export function useExpenses() {
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-
     try {
-      const [expenseRows, categoryRows] = await Promise.all([
-        listExpenses(filters),
-        listCategories(),
-      ])
-
+      const [expenseRows, categoryRows] = await Promise.all([listExpenses(filters), listCategories()])
       setExpenses(expenseRows)
       setCategories(categoryRows)
     } catch (fetchError) {
@@ -35,11 +24,7 @@ export function useExpenses() {
     }
   }, [filters])
 
-  useEffect(() => {
-    queueMicrotask(() => {
-      load()
-    })
-  }, [load])
+  useEffect(() => { load() }, [load])
 
   return {
     expenses,
@@ -68,7 +53,7 @@ export function useExpenses() {
       setError('')
       try {
         const updated = await updateExpense(id, values)
-        setExpenses((current) => current.map((expense) => (expense.id === id ? updated : expense)))
+        setExpenses((current) => current.map((e) => (e.id === id ? updated : e)))
         return updated
       } catch (updateError) {
         setError(updateError.message || 'Unable to update expense')
@@ -82,7 +67,7 @@ export function useExpenses() {
       setError('')
       try {
         await deleteExpense(id)
-        setExpenses((current) => current.filter((expense) => expense.id !== id))
+        setExpenses((current) => current.filter((e) => e.id !== id))
       } catch (deleteError) {
         setError(deleteError.message || 'Unable to delete expense')
         throw deleteError

@@ -1,6 +1,5 @@
 import { Button } from '../components/ui/Button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
 import { Separator } from '../components/ui/Separator'
 import { PageHeader } from '../components/common/PageHeader'
 import { useAuth } from '../hooks/useAuth'
@@ -8,7 +7,7 @@ import { useTheme } from '../hooks/useTheme'
 import { useRouter } from '../hooks/useRouter'
 import { useDashboardLayout } from '../hooks/useDashboardLayout'
 import { PRESETS, PRESET_KEYS, DENSITY_MODES } from '../config/widgets'
-import { PageContainer, SectionContainer } from '../components/layout/PageContainer'
+import { PageContainer } from '../components/layout/PageContainer'
 
 function Avatar({ name, email }) {
   const initials = (name || email || '?')

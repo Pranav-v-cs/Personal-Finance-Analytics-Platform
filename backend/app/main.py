@@ -1,20 +1,21 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.database import engine
 from app.database.models import Base
 from app.schemas.common import MessageResponse
-from app.routers.budgets import router as budgets_router
-from app.routers.categories import router as categories_router
-from app.routers.auth import router as auth_router
-from app.routers.dashboard import router as dashboard_router
-from app.routers.expenses import router as expenses_router
-from app.routers.goals import router as goals_router
-from app.routers.ai import router as ai_router
+from app.routers import ai, auth, budgets, categories, dashboard, expenses, goals
 
-Base.metadata.create_all(bind=engine)
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,17 +25,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth_router)
-app.include_router(expenses_router)
-app.include_router(dashboard_router)
-app.include_router(categories_router)
-app.include_router(budgets_router)
-app.include_router(goals_router)
-app.include_router(ai_router)
+app.include_router(auth.router)
+app.include_router(expenses.router)
+app.include_router(dashboard.router)
+app.include_router(categories.router)
+app.include_router(budgets.router)
+app.include_router(goals.router)
+app.include_router(ai.router)
+
 
 @app.get("/", response_model=MessageResponse)
 def root():
     return {"message": "Personal Finance Analytics API"}
+
 
 @app.get("/health")
 def health():

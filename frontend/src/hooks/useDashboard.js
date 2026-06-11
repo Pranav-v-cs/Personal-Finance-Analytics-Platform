@@ -8,29 +8,28 @@ import {
 import { getBudgets } from '../services/budgetService'
 import { getGoals } from '../services/goalService'
 
+const INITIAL_STATE = {
+  summary: null,
+  monthly: [],
+  recent: [],
+  categories: [],
+  budgets: [],
+  goals: [],
+  loading: true,
+  error: '',
+}
+
 export function useDashboard() {
-  const [state, setState] = useState({
-    summary: null,
-    monthly: [],
-    recent: [],
-    categories: [],
-    budgets: [],
-    goals: [],
-    loading: true,
-    error: '',
-  })
+  const [state, setState] = useState(INITIAL_STATE)
   const [refreshKey, setRefreshKey] = useState(0)
 
-  const refresh = useCallback(() => {
-    setRefreshKey((k) => k + 1)
-  }, [])
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
   useEffect(() => {
     let active = true
 
     async function load() {
-      setState((current) => ({ ...current, loading: true, error: '' }))
-
+      setState((s) => ({ ...s, loading: true, error: '' }))
       try {
         const [summary, monthly, recent, categories, budgets, goals] = await Promise.all([
           getDashboardSummary(),
@@ -40,38 +39,14 @@ export function useDashboard() {
           getBudgets(),
           getGoals(),
         ])
-
-        if (!active) return
-        setState({
-          summary,
-          monthly,
-          recent,
-          categories,
-          budgets,
-          goals,
-          loading: false,
-          error: '',
-        })
+        if (active) setState({ summary, monthly, recent, categories, budgets, goals, loading: false, error: '' })
       } catch (error) {
-        if (!active) return
-        setState({
-          summary: null,
-          monthly: [],
-          recent: [],
-          categories: [],
-          budgets: [],
-          goals: [],
-          loading: false,
-          error: error.message || 'Unable to load dashboard data',
-        })
+        if (active) setState({ ...INITIAL_STATE, loading: false, error: error.message || 'Unable to load dashboard data' })
       }
     }
 
     load()
-
-    return () => {
-      active = false
-    }
+    return () => { active = false }
   }, [refreshKey])
 
   return { ...state, refresh }

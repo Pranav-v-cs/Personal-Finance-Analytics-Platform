@@ -1,3 +1,6 @@
+from collections import defaultdict
+from datetime import datetime, timezone
+
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -20,7 +23,7 @@ def get_dashboard_summary(db: Session, user_id: int) -> dict:
         db.query(
             Expense.category,
             func.coalesce(func.sum(Expense.amount), 0),
-            func.count(Expense.id)
+            func.count(Expense.id),
         )
         .filter(Expense.user_id == user_id)
         .group_by(Expense.category)
@@ -28,10 +31,7 @@ def get_dashboard_summary(db: Session, user_id: int) -> dict:
         .all()
     )
 
-    total_expenses = totals[0]
-    expense_count = totals[1]
-    min_date = totals[2]
-    max_date = totals[3]
+    total_expenses, expense_count, min_date, max_date = totals
 
     active_days = 0
     if min_date is not None and max_date is not None:
@@ -41,11 +41,11 @@ def get_dashboard_summary(db: Session, user_id: int) -> dict:
 
     top_category = None
     if category_rows:
-        top_category_row = max(category_rows, key=lambda row: row[1])
-        top_total = top_category_row[1]
+        top_row = max(category_rows, key=lambda row: row[1])
+        top_total = top_row[1]
         top_percent = (top_total / total_expenses * 100) if total_expenses else 0
         top_category = {
-            "category": top_category_row[0],
+            "category": top_row[0],
             "total": top_total,
             "percent": top_percent,
         }
@@ -56,35 +56,29 @@ def get_dashboard_summary(db: Session, user_id: int) -> dict:
         "avg_per_day": avg_per_day,
         "top_category": top_category,
         "category_breakdown": [
-            {
-                "category": category,
-                "total_amount": total_amount,
-                "expense_count": expense_count
-            }
-            for category, total_amount, expense_count in category_rows
-        ]
+            {"category": cat, "total_amount": amt, "expense_count": cnt}
+            for cat, amt, cnt in category_rows
+        ],
     }
 
 
 def get_monthly_spending(db: Session, user_id: int) -> list[dict]:
-    month_rows = (
-        db.query(
-            func.strftime("%Y-%m", Expense.transaction_date),
-            func.coalesce(func.sum(Expense.amount), 0)
-        )
+    expenses = (
+        db.query(Expense)
         .filter(Expense.user_id == user_id)
-        .group_by(func.strftime("%Y-%m", Expense.transaction_date))
-        .order_by(func.strftime("%Y-%m", Expense.transaction_date).asc())
+        .order_by(Expense.transaction_date.asc())
         .all()
     )
 
+    monthly: dict[str, float] = {}
+    for e in expenses:
+        if e.transaction_date:
+            month = e.transaction_date.strftime("%Y-%m")
+            monthly[month] = monthly.get(month, 0) + float(e.amount)
+
     return [
-        {
-            "month": month,
-            "total_amount": total_amount
-        }
-        for month, total_amount in month_rows
-        if month is not None
+        {"month": month, "total_amount": round(total, 2)}
+        for month, total in sorted(monthly.items())
     ]
 
 
@@ -98,7 +92,7 @@ def get_dashboard_categories(db: Session, user_id: int) -> list[dict]:
     category_rows = (
         db.query(
             Expense.category,
-            func.coalesce(func.sum(Expense.amount), 0)
+            func.coalesce(func.sum(Expense.amount), 0),
         )
         .filter(Expense.user_id == user_id)
         .group_by(Expense.category)
@@ -108,11 +102,11 @@ def get_dashboard_categories(db: Session, user_id: int) -> list[dict]:
 
     return [
         {
-            "category": category,
+            "category": cat,
             "total": total,
             "percent": (total / total_expenses * 100) if total_expenses else 0,
         }
-        for category, total in category_rows
+        for cat, total in category_rows
     ]
 
 
@@ -125,7 +119,7 @@ def get_dashboard_recent(db: Session, user_id: int) -> list[dict]:
         .all()
     )
 
-    def _title_from_description(description: str | None) -> str:
+    def _title(description: str | None) -> str:
         if not description:
             return "Expense"
         first_line = description.splitlines()[0].strip()
@@ -133,37 +127,33 @@ def get_dashboard_recent(db: Session, user_id: int) -> list[dict]:
 
     return [
         {
-            "id": expense.id,
-            "title": _title_from_description(expense.description),
-            "amount": expense.amount,
-            "category": expense.category,
-            "date": expense.transaction_date.isoformat() if expense.transaction_date else "",
+            "id": e.id,
+            "title": _title(e.description),
+            "amount": e.amount,
+            "category": e.category,
+            "date": e.transaction_date.isoformat() if e.transaction_date else "",
         }
-        for expense in recent_rows
+        for e in recent_rows
     ]
 
 
 def get_category_monthly(db: Session, user_id: int) -> list[dict]:
-    rows = (
-        db.query(
-            func.strftime("%Y-%m", Expense.transaction_date),
-            Expense.category,
-            func.coalesce(func.sum(Expense.amount), 0),
-        )
+    expenses = (
+        db.query(Expense)
         .filter(Expense.user_id == user_id)
-        .group_by(func.strftime("%Y-%m", Expense.transaction_date), Expense.category)
-        .order_by(func.strftime("%Y-%m", Expense.transaction_date).asc(), Expense.category.asc())
+        .order_by(Expense.transaction_date.asc(), Expense.category.asc())
         .all()
     )
 
+    grouped: dict[tuple[str, str], float] = {}
+    for e in expenses:
+        if e.transaction_date:
+            month = e.transaction_date.strftime("%Y-%m")
+            grouped[(month, e.category)] = grouped.get((month, e.category), 0) + float(e.amount)
+
     return [
-        {
-            "month": month,
-            "category": category,
-            "total_amount": total,
-        }
-        for month, category, total in rows
-        if month is not None
+        {"month": month, "category": cat, "total_amount": round(total, 2)}
+        for (month, cat), total in sorted(grouped.items())
     ]
 
 
@@ -187,71 +177,50 @@ def get_analytics(db: Session, user_id: int) -> dict:
     variance = sum((x - mean) ** 2 for x in amounts) / len(amounts)
     std_dev = variance ** 0.5
 
+    def _txn_dict(e):
+        return {
+            "id": e.id,
+            "title": (e.description or "Expense").splitlines()[0].strip() or "Expense",
+            "amount": float(e.amount),
+            "category": e.category,
+            "date": e.transaction_date.isoformat() if e.transaction_date else "",
+        }
+
     anomaly_candidates = sorted(
         [
-            {
-                "id": e.id,
-                "title": (e.description or "Expense").splitlines()[0].strip() or "Expense",
-                "amount": float(e.amount),
-                "category": e.category,
-                "date": e.transaction_date.isoformat() if e.transaction_date else "",
-                "z_score": round((float(e.amount) - mean) / std_dev, 2) if std_dev > 0 else 0,
-            }
+            {**_txn_dict(e), "z_score": round((float(e.amount) - mean) / std_dev, 2) if std_dev > 0 else 0}
             for e in expenses
         ],
         key=lambda x: abs(x["z_score"]),
         reverse=True,
     )
 
-    weekday_data: dict[int, dict] = {}
+    weekday_data = defaultdict(lambda: {"total": 0.0, "count": 0})
+    weekly_data = defaultdict(lambda: {"total": 0.0, "count": 0})
+
     for e in expenses:
         if e.transaction_date:
             day = e.transaction_date.weekday()
-            if day not in weekday_data:
-                weekday_data[day] = {"total": 0.0, "count": 0}
             weekday_data[day]["total"] += float(e.amount)
             weekday_data[day]["count"] += 1
 
+            iso = e.transaction_date.isocalendar()
+            week_key = f"{iso[0]}-W{iso[1]:02d}"
+            weekly_data[week_key]["total"] += float(e.amount)
+            weekly_data[week_key]["count"] += 1
+
     weekday_aggregates = [
-        {
-            "day": day,
-            "total": round(data["total"], 2),
-            "count": data["count"],
-            "avg": round(data["total"] / data["count"], 2),
-        }
-        for day, data in sorted(weekday_data.items())
+        {"day": day, "total": round(d["total"], 2), "count": d["count"], "avg": round(d["total"] / d["count"], 2)}
+        for day, d in sorted(weekday_data.items())
     ]
 
-    weekly: dict[str, dict] = {}
-    for e in expenses:
-        if e.transaction_date:
-            iso = e.transaction_date.isocalendar()
-            key = f"{iso[0]}-W{iso[1]:02d}"
-            if key not in weekly:
-                weekly[key] = {"total": 0.0, "count": 0}
-            weekly[key]["total"] += float(e.amount)
-            weekly[key]["count"] += 1
-
     weekly_metrics = [
-        {
-            "week": week,
-            "total": round(data["total"], 2),
-            "count": data["count"],
-        }
-        for week, data in sorted(weekly.items())
+        {"week": week, "total": round(d["total"], 2), "count": d["count"]}
+        for week, d in sorted(weekly_data.items())
     ][-24:]
 
     largest_transactions = sorted(
-        [
-            {
-                "id": e.id,
-                "title": (e.description or "Expense").splitlines()[0].strip() or "Expense",
-                "amount": float(e.amount),
-                "category": e.category,
-                "date": e.transaction_date.isoformat() if e.transaction_date else "",
-            }
-            for e in expenses
-        ],
+        [_txn_dict(e) for e in expenses],
         key=lambda x: x["amount"],
         reverse=True,
     )[:5]

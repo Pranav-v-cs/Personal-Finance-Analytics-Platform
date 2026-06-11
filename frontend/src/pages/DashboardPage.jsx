@@ -1,21 +1,10 @@
 import { useMemo, useState } from 'react'
-import {
-  DndContext,
-  closestCorners,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
+import { DndContext, closestCorners, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { DeltaBadge } from '../components/common/DeltaBadge'
 import { EmptyState } from '../components/common/EmptyState'
 import { InlineError } from '../components/common/InlineError'
 import { PageHeader } from '../components/common/PageHeader'
-import { SkeletonLine } from '../components/ui/Skeleton'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { PageContainer } from '../components/layout/PageContainer'
@@ -51,27 +40,15 @@ const WIDGET_COMPONENTS = {
   'ai-assistant': WidgetAIAssistant,
 }
 
-function getWidgetProps(id, ctx) {
-  switch (id) {
-    case 'financial-health':
-      return { health: ctx.health }
-    case 'insights':
-      return { insights: ctx.insights }
-    case 'metrics':
-      return { metrics: ctx.metrics, formatCurrency: ctx.formatCurrency }
-    case 'trend':
-      return { monthSeries: ctx.monthSeries, formatCurrency: ctx.formatCurrency, trendNarrative: ctx.trendNarrative, DeltaBadge, metrics: ctx.metrics }
-    case 'category-intelligence':
-      return { categories: ctx.categories, formatCurrency: ctx.formatCurrency }
-    case 'budget-summary':
-      return { budgets: ctx.budgets, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
-    case 'goal-progress':
-      return { goals: ctx.goals, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }
-    case 'ai-assistant':
-      return {}
-    default:
-      return {}
-  }
+const WIDGET_PROPS_MAP = {
+  'financial-health': (ctx) => ({ health: ctx.health }),
+  insights: (ctx) => ({ insights: ctx.insights }),
+  metrics: (ctx) => ({ metrics: ctx.metrics, formatCurrency: ctx.formatCurrency }),
+  trend: (ctx) => ({ monthSeries: ctx.monthSeries, formatCurrency: ctx.formatCurrency, trendNarrative: ctx.trendNarrative, DeltaBadge, metrics: ctx.metrics }),
+  'category-intelligence': (ctx) => ({ categories: ctx.categories, formatCurrency: ctx.formatCurrency }),
+  'budget-summary': (ctx) => ({ budgets: ctx.budgets, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }),
+  'goal-progress': (ctx) => ({ goals: ctx.goals, formatCurrency: ctx.formatCurrency, navigate: ctx.navigate }),
+  'ai-assistant': () => ({}),
 }
 
 function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
@@ -82,18 +59,12 @@ function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
 
   return (
     <section className={`flex flex-col gap-3 ${isHero ? '' : ''}`}>
-      {label && (
-        <div>
-          <h2 className="text-lg font-extrabold tracking-tight">{label}</h2>
-        </div>
-      )}
+      {label && <div><h2 className="text-lg font-extrabold tracking-tight">{label}</h2></div>}
       <SortableContext items={visibleIds} strategy={verticalListSortingStrategy}>
         <div className="flex flex-col gap-4 sm:grid sm:grid-cols-4">
           {visibleIds.map((widgetId) => {
             const Widget = WIDGET_COMPONENTS[widgetId]
             if (!Widget) return null
-            const props = getWidgetProps(widgetId, sharedProps)
-            const size = layout.getWidgetSize(widgetId)
             const def = WIDGET_DEFS[widgetId]
             return (
               <DashboardWidget
@@ -102,11 +73,11 @@ function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
                 zone={zone}
                 density={layout.density}
                 onToggle={layout.toggleWidget}
-                size={size}
+                size={layout.getWidgetSize(widgetId)}
                 onResize={() => layout.cycleWidgetSize(widgetId)}
                 sizes={def?.sizes}
               >
-                <Widget {...props} />
+                <Widget {...WIDGET_PROPS_MAP[widgetId](sharedProps)} />
               </DashboardWidget>
             )
           })}
@@ -117,7 +88,7 @@ function ZoneSection({ zone, label, widgetIds, layout, sharedProps }) {
 }
 
 export default function DashboardPage() {
-  const { summary, monthly, recent, categories, budgets, goals, loading, error, refresh } = useDashboard()
+  const { summary, monthly, recent, categories, budgets, goals, loading, error } = useDashboard()
   const { navigate } = useRouter()
   const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
@@ -130,7 +101,6 @@ export default function DashboardPage() {
     useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 8 } }),
   )
 
-  const monthSeries = monthly.length ? monthly : []
   const hasExpenses = metrics.expenseCount > 0
 
   const trendNarrative = useMemo(() => {
@@ -145,18 +115,16 @@ export default function DashboardPage() {
   }, [monthly])
 
   const sharedProps = useMemo(() => ({
-    insights, metrics, health, monthSeries, trendNarrative,
+    insights, metrics, health, monthSeries: monthly, trendNarrative,
     categories, budgets, goals, navigate, formatCurrency,
-  }), [insights, metrics, health, monthSeries, trendNarrative, categories, budgets, goals, navigate])
+  }), [insights, metrics, health, monthly, trendNarrative, categories, budgets, goals, navigate])
 
   if (loading) {
     return (
       <PageContainer>
         <PageHeader eyebrow="Dashboard" title="Your financial snapshot" description="Loading insights..." />
         <div className="flex flex-col gap-4">
-          <WidgetSkeleton />
-          <WidgetSkeleton />
-          <WidgetSkeleton />
+          <WidgetSkeleton /><WidgetSkeleton /><WidgetSkeleton />
         </div>
       </PageContainer>
     )
@@ -173,94 +141,67 @@ export default function DashboardPage() {
 
   return (
     <PageContainer>
-      <div className={`flex flex-col gap-12`}>
-      <PageHeader
-        eyebrow="Dashboard"
-        title="Your financial snapshot"
-        description="Your financial health, key metrics, and spending trends."
-        actions={
-          <>
-            <Button variant="ghost" onClick={() => setDrawerOpen(true)}>
-              Customize
-            </Button>
-            <Button onClick={() => navigate('/expenses')}>All transactions</Button>
-          </>
-        }
-      />
+      <div className="flex flex-col gap-12">
+        <PageHeader
+          eyebrow="Dashboard"
+          title="Your financial snapshot"
+          description="Your financial health, key metrics, and spending trends."
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => setDrawerOpen(true)}>Customize</Button>
+              <Button onClick={() => navigate('/expenses')}>All transactions</Button>
+            </>
+          }
+        />
 
-      {!hasExpenses ? (
-        <Card>
-          <EmptyState
-            title="Add your first expense to see your financial overview."
-            description="Once you capture a few transactions, your health score, trends, and category mix will populate here."
-            actionLabel="Add a transaction"
-            onAction={() => navigate('/expenses')}
-          />
-        </Card>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCorners}
-          onDragEnd={(event) => {
-            const { active, over } = event
-            if (!active || !over || active.id === over.id) return
-            const entries = Object.entries(layout.zones || {})
-            const activeZone = entries.find(([, ids]) => ids.includes(active.id))?.[0]
-            const overZone = entries.find(([, ids]) => ids.includes(over.id))?.[0]
-            if (activeZone && activeZone === overZone) {
-              layout.reorder(activeZone, active.id, over.id)
-            }
-          }}
+        {!hasExpenses ? (
+          <Card>
+            <EmptyState
+              title="Add your first expense to see your financial overview."
+              description="Once you capture a few transactions, your health score, trends, and category mix will populate here."
+              actionLabel="Add a transaction"
+              onAction={() => navigate('/expenses')}
+            />
+          </Card>
+        ) : (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCorners}
+            onDragEnd={(event) => {
+              const { active, over } = event
+              if (!active || !over || active.id === over.id) return
+              const entries = Object.entries(layout.zones || {})
+              const activeZone = entries.find(([, ids]) => ids.includes(active.id))?.[0]
+              const overZone = entries.find(([, ids]) => ids.includes(over.id))?.[0]
+              if (activeZone && activeZone === overZone) layout.reorder(activeZone, active.id, over.id)
+            }}
+          >
+            <div className="flex flex-col gap-12">
+              {['hero', 'insights', 'analytics', 'utility'].map((zone) => (
+                <ZoneSection
+                  key={zone}
+                  zone={zone}
+                  label={zone === 'insights' ? 'Insights' : zone === 'analytics' ? 'Analytics' : ''}
+                  widgetIds={layout.zones?.[zone] || []}
+                  layout={layout}
+                  sharedProps={sharedProps}
+                />
+              ))}
+            </div>
+          </DndContext>
+        )}
+
+        <button
+          type="button"
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white text-2xl font-bold shadow-[0_6px_20px_rgba(124,116,232,0.4)] hover:bg-[var(--accentStrong)] active:scale-95 transition-all md:hidden"
+          onClick={() => navigate('/expenses')}
+          aria-label="Quick add expense"
         >
-          <div className="flex flex-col gap-12">
-            <ZoneSection
-              zone="hero"
-              label=""
-              widgetIds={layout.zones?.hero || []}
-              layout={layout}
-              sharedProps={sharedProps}
-            />
-            <ZoneSection
-              zone="insights"
-              label="Insights"
-              widgetIds={layout.zones?.insights || []}
-              layout={layout}
-              sharedProps={sharedProps}
-            />
-            <ZoneSection
-              zone="analytics"
-              label="Analytics"
-              widgetIds={layout.zones?.analytics || []}
-              layout={layout}
-              sharedProps={sharedProps}
-            />
-            <ZoneSection
-              zone="utility"
-              label=""
-              widgetIds={layout.zones?.utility || []}
-              layout={layout}
-              sharedProps={sharedProps}
-            />
-          </div>
-        </DndContext>
-      )}
+          +
+        </button>
 
-      <button
-        type="button"
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white text-2xl font-bold shadow-[0_6px_20px_rgba(124,116,232,0.4)] hover:bg-[var(--accentStrong)] active:scale-95 transition-all md:hidden"
-        onClick={() => navigate('/expenses')}
-        aria-label="Quick add expense"
-      >
-        +
-      </button>
-
-      <CustomizeDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        layout={layout}
-        data={{ hasBudgets: budgets.length > 0, hasGoals: goals.length > 0 }}
-      />
-    </div>
+        <CustomizeDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} layout={layout} data={{ hasBudgets: budgets.length > 0, hasGoals: goals.length > 0 }} />
+      </div>
     </PageContainer>
   )
 }
