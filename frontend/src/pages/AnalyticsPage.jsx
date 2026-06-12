@@ -8,6 +8,7 @@ import { InlineError } from '../components/common/InlineError'
 import { Skeleton, SkeletonLine } from '../components/ui/Skeleton'
 import { useAnalytics } from '../hooks/useAnalytics'
 import { useAIExplain } from '../hooks/useAIExplain'
+import { useAuth } from '../hooks/useAuth'
 import { formatCurrency, formatDate, formatMonthLabel } from '../utils/format'
 import ChartTrend from '../components/common/ChartTrend'
 import ChartDonut from '../components/common/ChartDonut'
@@ -57,6 +58,7 @@ function AnalyticsSkeleton() {
 }
 
 export default function AnalyticsPage() {
+  const { user } = useAuth()
   const {
     summary, monthly, categories, categoryMonthly, analytics,
     loading, error,
@@ -185,7 +187,7 @@ export default function AnalyticsPage() {
         </div>
         {trendNarrative && <p className="text-sm text-[var(--muted)] italic">{trendNarrative}</p>}
         <div className="mt-2">
-          <ChartTrend data={monthly} height={80} />
+          <ChartTrend data={monthly} height={80} currency={user?.currency} />
         </div>
       </section>
 
@@ -198,7 +200,7 @@ export default function AnalyticsPage() {
               <CardTitle>Cumulative spending</CardTitle>
             </CardHeader>
             <CardContent>
-              <ChartArea data={cumulativeData} dataKey="cumulative" name="Total" height={240} />
+              <ChartArea data={cumulativeData} dataKey="cumulative" name="Total" height={240} currency={user?.currency} />
             </CardContent>
           </Card>
           <Card>
@@ -207,7 +209,7 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
             {stackedData.length ? (
-              <ChartStacked data={stackedData} categories={stackedCategories} />
+              <ChartStacked data={stackedData} categories={stackedCategories} currency={user?.currency} />
             ) : (
               <p className="text-sm text-[var(--muted)] text-center py-8">Add expenses in different categories to see how your spending breaks down over time.</p>
             )}

@@ -1,8 +1,8 @@
 import { memo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, currencyTickFormatter } from '../../utils/format'
 
-function AreaTooltip({ active, payload, label }) {
+function AreaTooltip({ active, payload, label, currency }) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
@@ -10,14 +10,14 @@ function AreaTooltip({ active, payload, label }) {
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2" style={{ color: entry.color }}>
           <span className="w-1.5 h-1.5 rounded-full" style={{ background: entry.color }} />
-          {entry.name}: {formatCurrency(entry.value)}
+          {entry.name}: {formatCurrency(entry.value, currency)}
         </div>
       ))}
     </div>
   )
 }
 
-const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spending', height = 240, color = '#7c74e8' }) {
+const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spending', height = 240, color = '#7c74e8', currency }) {
   if (!data?.length) return null
 
   return (
@@ -32,8 +32,8 @@ const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spe
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={(v) => `$${v}`} width={50} />
-          <Tooltip content={<AreaTooltip />} />
+          <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={currencyTickFormatter(currency)} width={50} />
+          <Tooltip content={<AreaTooltip currency={currency} />} />
           <Area type="monotone" dataKey={dataKey} name={name} stroke={color} strokeWidth={2} fill={`url(#areaFill_${dataKey})`} dot={false} activeDot={{ r: 4, fill: color }} />
         </AreaChart>
       </ResponsiveContainer>

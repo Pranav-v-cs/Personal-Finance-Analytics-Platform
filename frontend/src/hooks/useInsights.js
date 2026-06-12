@@ -56,7 +56,7 @@ export function useInsights({ summary, monthly, recent, categories, budgets }) {
         const monthlySave = Math.round(catAmount * 0.1)
         insights.push(makeInsight('savings', {
           title: 'Savings opportunity',
-          message: `Reducing ${topCategory.category} by 10% could save ₹${monthlySave}/month`,
+          message: `Reducing ${topCategory.category} by 10% could save ${formatCurrency(monthlySave)}/month`,
           priority: 1,
           actionLabel: 'Review spending',
         }))
@@ -138,9 +138,9 @@ export function useInsights({ summary, monthly, recent, categories, budgets }) {
         let msg
         if (Math.abs(momChangePercent) >= 5) {
           const dir = momChangePercent > 0 ? 'faster' : 'slower'
-          msg = `You're spending ₹${avgPerDay.toFixed(0)}/day — ${Math.abs(momChangePercent).toFixed(0)}% ${dir} than last month`
+          msg = `You're spending ${formatCurrency(avgPerDay)}/day — ${Math.abs(momChangePercent).toFixed(0)}% ${dir} than last month`
         } else {
-          msg = `You're spending ₹${avgPerDay.toFixed(0)}/day on average`
+          msg = `You're spending ${formatCurrency(avgPerDay)}/day on average`
         }
         insights.push(makeInsight('velocity', {
           title: 'Spending velocity',
@@ -154,7 +154,7 @@ export function useInsights({ summary, monthly, recent, categories, budgets }) {
       if (!isDismissed('top_category', topCategory.category)) {
         const catShare = categories?.find((c) => c.category === topCategory.category)
         const catTotal = Number(catShare?.total_amount || catShare?.total || 0)
-        const formatted = catTotal ? `₹${catTotal.toLocaleString()}` : ''
+        const formatted = catTotal ? formatCurrency(catTotal) : ''
         insights.push(makeInsight('top_category', {
           title: 'Top spending category',
           message: `${topCategory.category} is your largest category this month${formatted ? '. ' + formatted : ''} — ${topPct.toFixed(0)}% of total spending`,
@@ -183,7 +183,7 @@ export function useInsights({ summary, monthly, recent, categories, budgets }) {
       if (!isDismissed('largest', String(largest.id))) {
         insights.push(makeInsight('largest', {
           title: 'Largest transaction',
-          message: `${largest.title || 'Expense'} — ₹${Number(largest.amount).toFixed(0)}`,
+          message: `${largest.title || 'Expense'} — ${formatCurrency(largest.amount)}`,
           priority: 5,
         }))
       }

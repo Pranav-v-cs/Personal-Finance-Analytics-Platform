@@ -11,7 +11,7 @@ import { Label } from '../components/ui/Label'
 import { Separator } from '../components/ui/Separator'
 import { useBudgets } from '../hooks/useBudgets'
 import { useAIExplain } from '../hooks/useAIExplain'
-import { formatCurrency } from '../utils/format'
+import { formatCurrency, getCurrencySymbol } from '../utils/format'
 import { listCategories } from '../services/categoryService'
 
 function BudgetSkeleton() {
@@ -200,7 +200,7 @@ function GoalForm({ onSubmit, onCancel, initial }) {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <div className="flex flex-col gap-1.5"><Label htmlFor="goal-name">Goal name</Label><Input id="goal-name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Emergency fund" /></div>
-      <div className="flex flex-col gap-1.5"><Label htmlFor="goal-amount">Target amount (₹)</Label><Input id="goal-amount" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" /></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="goal-amount">Target amount ({getCurrencySymbol()})</Label><Input id="goal-amount" type="number" step="0.01" min="0.01" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} placeholder="100000" /></div>
       <div className="flex flex-col gap-1.5"><Label htmlFor="goal-date">Target date (optional)</Label><Input id="goal-date" type="date" value={targetDate} onChange={(e) => setTargetDate(e.target.value)} /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
@@ -233,7 +233,7 @@ function AddFundsForm({ goal, onSubmit, onCancel }) {
   return (
     <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       <p className="text-sm">Adding funds to <strong>{goal.name}</strong></p>
-      <div className="flex flex-col gap-1.5"><Label htmlFor="add-funds-amount">Amount to add (₹)</Label><Input id="add-funds-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" /></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="add-funds-amount">Amount to add ({getCurrencySymbol()})</Label><Input id="add-funds-amount" type="number" step="0.01" min="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="5000" /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Add funds'}</Button>
@@ -270,7 +270,7 @@ function BudgetForm({ categories, onSubmit, onCancel, initial }) {
         <option value="">Select category</option>
         {categories.map((c) => <option key={c} value={c}>{c}</option>)}
       </Select></div>
-      <div className="flex flex-col gap-1.5"><Label htmlFor="budget-limit">Monthly limit (₹)</Label><Input id="budget-limit" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" /></div>
+      <div className="flex flex-col gap-1.5"><Label htmlFor="budget-limit">Monthly limit ({getCurrencySymbol()})</Label><Input id="budget-limit" type="number" step="0.01" min="0.01" value={limit} onChange={(e) => setLimit(e.target.value)} placeholder="5000" /></div>
       {error && <InlineError message={error} />}
       <div className="flex items-center gap-2 pt-2">
         <Button type="submit" disabled={saving}>{saving ? 'Saving...' : initial ? 'Update' : 'Create budget'}</Button>

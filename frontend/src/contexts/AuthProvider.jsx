@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { getMe, login as loginRequest, logout as logoutRequest, register as registerRequest } from '../services/authService'
+import { getMe, login as loginRequest, logout as logoutRequest, register as registerRequest, updateUser as updateUserRequest } from '../services/authService'
 import { AuthContext } from './authContext'
 
 export function AuthProvider({ children }) {
@@ -42,6 +42,12 @@ export function AuthProvider({ children }) {
   }, [token])
 
   useEffect(() => {
+    if (user?.currency) {
+      try { localStorage.setItem('currency', user.currency) } catch { /* noop */ }
+    }
+  }, [user?.currency])
+
+  useEffect(() => {
     const handleUnauthorized = () => {
       logoutRequest()
       setToken(null)
@@ -64,6 +70,11 @@ export function AuthProvider({ children }) {
       setToken(result.token)
       setUser(result.user)
       return result
+    },
+    async updateProfile(data) {
+      const updated = await updateUserRequest(data)
+      setUser(updated)
+      return updated
     },
     logout() {
       logoutRequest()

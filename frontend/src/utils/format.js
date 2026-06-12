@@ -1,22 +1,79 @@
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 2,
-})
-
-const compactFormatter = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 1,
-})
-
-export function formatCurrency(value) {
-  const number = Number(value || 0)
-  return currencyFormatter.format(number)
+export function getCurrency() {
+  try {
+    return localStorage.getItem('currency') || 'USD'
+  } catch {
+    return 'USD'
+  }
 }
 
-export function formatCompact(value) {
+export function formatCurrency(value, currency) {
+  const cur = currency || getCurrency()
   const number = Number(value || 0)
-  return compactFormatter.format(number)
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: cur,
+      maximumFractionDigits: 2,
+    }).format(number)
+  } catch {
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(number)
+  }
+}
+
+export function formatCompact(value, currency) {
+  const cur = currency || getCurrency()
+  const number = Number(value || 0)
+  if (number === 0) return formatCurrency(0, cur)
+  try {
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: cur,
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    })
+    return formatter.format(number)
+  } catch {
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      notation: 'compact',
+      maximumFractionDigits: 1,
+    }).format(number)
+  }
+}
+
+export function currencyTickFormatter(currency = 'USD') {
+  return (value) => {
+    try {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency,
+        notation: 'compact',
+        maximumFractionDigits: 0,
+      }).format(value)
+    } catch {
+      return new Intl.NumberFormat('en-US', {
+        style: 'decimal',
+        notation: 'compact',
+        maximumFractionDigits: 0,
+      }).format(value)
+    }
+  }
+}
+
+export function getCurrencySymbol(currency) {
+  const cur = currency || getCurrency()
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, minimumFractionDigits: 0, maximumFractionDigits: 0 })
+      .format(0)
+      .replace(/[\d,.\s]/g, '')
+      .trim()
+  } catch {
+    return cur
+  }
 }
 
 export function formatDate(value) {

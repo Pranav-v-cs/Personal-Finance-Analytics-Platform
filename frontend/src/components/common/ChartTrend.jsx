@@ -1,18 +1,18 @@
 import { memo } from 'react'
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
-import { formatCurrency } from '../../utils/format'
+import { formatCurrency, currencyTickFormatter } from '../../utils/format'
 
-function ChartTooltip({ active, payload, label }) {
+function ChartTooltip({ active, payload, label, currency }) {
   if (!active || !payload?.length) return null
   return (
     <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
       <div className="font-semibold mb-1">{label}</div>
-      <div className="font-mono font-bold">{formatCurrency(payload[0].value)}</div>
+      <div className="font-mono font-bold">{formatCurrency(payload[0].value, currency)}</div>
     </div>
   )
 }
 
-const ChartTrend = memo(function ChartTrend({ data, height = 240 }) {
+const ChartTrend = memo(function ChartTrend({ data, height = 240, currency }) {
   if (!data?.length) return null
 
   return (
@@ -27,8 +27,8 @@ const ChartTrend = memo(function ChartTrend({ data, height = 240 }) {
           </defs>
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
           <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={(v) => `$${v}`} width={50} />
-          <Tooltip content={<ChartTooltip />} />
+          <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={currencyTickFormatter(currency)} width={50} />
+          <Tooltip content={<ChartTooltip currency={currency} />} />
           <Area type="monotone" dataKey="total" stroke="#7c74e8" strokeWidth={2} fill="url(#trendFill)" dot={false} activeDot={{ r: 4, fill: '#7c74e8' }} />
         </AreaChart>
       </ResponsiveContainer>

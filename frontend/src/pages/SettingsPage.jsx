@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button } from '../components/ui/Button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card'
 import { Separator } from '../components/ui/Separator'
@@ -8,6 +9,31 @@ import { useRouter } from '../hooks/useRouter'
 import { useDashboardLayout } from '../hooks/useDashboardLayout'
 import { PRESETS, PRESET_KEYS, DENSITY_MODES } from '../config/widgets'
 import { PageContainer } from '../components/layout/PageContainer'
+import { formatCurrency } from '../utils/format'
+
+const CURRENCIES = [
+  { code: 'USD', label: 'US Dollar ($)', symbol: '$' },
+  { code: 'EUR', label: 'Euro (€)', symbol: '€' },
+  { code: 'GBP', label: 'British Pound (£)', symbol: '£' },
+  { code: 'INR', label: 'Indian Rupee (₹)', symbol: '₹' },
+  { code: 'JPY', label: 'Japanese Yen (¥)', symbol: '¥' },
+  { code: 'CAD', label: 'Canadian Dollar (C$)', symbol: 'CA$' },
+  { code: 'AUD', label: 'Australian Dollar (A$)', symbol: 'AU$' },
+  { code: 'CHF', label: 'Swiss Franc (Fr)', symbol: 'CHF' },
+  { code: 'CNY', label: 'Chinese Yuan (¥)', symbol: 'CN¥' },
+  { code: 'BRL', label: 'Brazilian Real (R$)', symbol: 'R$' },
+  { code: 'KRW', label: 'South Korean Won (₩)', symbol: '₩' },
+  { code: 'SEK', label: 'Swedish Krona (kr)', symbol: 'SEK' },
+  { code: 'NOK', label: 'Norwegian Krone (kr)', symbol: 'NOK' },
+  { code: 'DKK', label: 'Danish Krone (kr)', symbol: 'DKK' },
+  { code: 'NZD', label: 'New Zealand Dollar (NZ$)', symbol: 'NZ$' },
+  { code: 'SGD', label: 'Singapore Dollar (S$)', symbol: 'SGD' },
+  { code: 'MXN', label: 'Mexican Peso (MX$)', symbol: 'MX$' },
+  { code: 'ZAR', label: 'South African Rand (R)', symbol: 'ZAR' },
+  { code: 'TRY', label: 'Turkish Lira (₺)', symbol: 'TRY' },
+  { code: 'AED', label: 'UAE Dirham (د.إ)', symbol: 'AED' },
+  { code: 'SAR', label: 'Saudi Riyal (﷼)', symbol: 'SAR' },
+]
 
 function Avatar({ name, email }) {
   const initials = (name || email || '?')
@@ -25,14 +51,25 @@ function Avatar({ name, email }) {
 }
 
 export default function SettingsPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, updateProfile } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const { navigate } = useRouter()
   const layout = useDashboardLayout()
+  const [saving, setSaving] = useState(false)
 
   const handleLogout = () => {
     logout()
     navigate('/auth', { replace: true })
+  }
+
+  const handleCurrencyChange = async (code) => {
+    setSaving(true)
+    try {
+      await updateProfile({ currency: code })
+    } catch {
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -107,6 +144,41 @@ export default function SettingsPage() {
               <Button variant="secondary" onClick={toggleTheme}>
                 {theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
               </Button>
+            </CardContent>
+          </Card>
+
+          {/* Currency */}
+          <Card>
+            <CardHeader>
+              <div className="text-xs uppercase tracking-widest text-[var(--muted)] font-semibold">Currency</div>
+              <CardTitle>Preferred currency</CardTitle>
+              <CardDescription>All amounts will be displayed in the selected currency.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="relative">
+                <select
+                  value={user?.currency || 'USD'}
+                  onChange={(e) => handleCurrencyChange(e.target.value)}
+                  disabled={saving}
+                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-sm font-medium text-[var(--fg)] appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-[var(--accent)] disabled:opacity-50"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-[var(--muted)]">
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+              {user?.currency && (
+                <p className="mt-3 text-xs text-[var(--muted)]">
+                  Preview: {formatCurrency(1234.56, user.currency)}
+                </p>
+              )}
             </CardContent>
           </Card>
 

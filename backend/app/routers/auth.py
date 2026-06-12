@@ -3,7 +3,14 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.user import UserCreate, UserResponse, UserLogin, Token
+from app.schemas.user import (
+    CURRENCIES,
+    UserCreate,
+    UserResponse,
+    UserLogin,
+    Token,
+    UserUpdate,
+)
 from app.core.security import hash_password, verify_password, create_access_token
 from app.services.auth_service import get_current_user
 
@@ -47,3 +54,23 @@ def login_user(user_data: UserLogin, db: Session = Depends(get_db)):
 
     access_token = create_access_token({"sub": str(user.id)})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    updates: UserUpdate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    if updates.name is not None:
+        current_user.name = updates.name
+    if updates.currency is not None:
+        if updates.currency not in CURRENCIES:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Unsupported currency '{updates.currency}'. Supported currencies: {', '.join(CURRENCIES)}",
+            )
+        current_user.currency = updates.currency
+    db.commit()
+    db.refresh(current_user)
+    return current_user

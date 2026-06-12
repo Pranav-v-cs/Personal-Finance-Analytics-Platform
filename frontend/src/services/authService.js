@@ -24,6 +24,10 @@ export function getMe() {
   return api.get('/auth/me')
 }
 
+export function updateUser(data) {
+  return api.patch('/auth/me', data)
+}
+
 export function logout() {
   localStorage.removeItem('auth_token')
 }
