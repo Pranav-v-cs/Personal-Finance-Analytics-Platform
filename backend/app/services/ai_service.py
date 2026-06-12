@@ -1,5 +1,6 @@
 import logging
 
+from fastapi import HTTPException, status
 from openai import OpenAI
 
 from app.core.config import settings
@@ -10,7 +11,11 @@ logger = logging.getLogger(__name__)
 def generate(_provider: str, prompt: str, context: dict) -> str:
     api_key = settings.OPENROUTER_API_KEY
     if not api_key:
-        return "OpenRouter API key not configured. Set OPENROUTER_API_KEY in .env"
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="The AI assistant is not available because no API key is configured. "
+                   "Please set the OPENROUTER_API_KEY environment variable and restart the server.",
+        )
 
     client = OpenAI(api_key=api_key, base_url=settings.OPENROUTER_BASE_URL)
     try:
@@ -39,4 +44,8 @@ def generate(_provider: str, prompt: str, context: dict) -> str:
         return response.choices[0].message.content
     except Exception as e:
         logger.error("OpenRouter error: %s", e)
-        return f"OpenRouter error: {str(e)}"
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"The AI assistant encountered an error while processing your request: {str(e)}. "
+                   "Please try again later. If the problem persists, check your OpenRouter API key and configuration.",
+        )

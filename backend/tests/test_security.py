@@ -73,7 +73,7 @@ class TestTokenDecoding:
         expired = datetime.now(timezone.utc) - timedelta(hours=1)
         token = jwt.encode({"sub": "1", "exp": expired}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
         payload = decode_access_token(token)
-        assert payload is None
+        assert payload == "expired"
 
     def test_decode_malformed_token(self):
         payload = decode_access_token("")

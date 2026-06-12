@@ -4,11 +4,14 @@ from app.services.ai_service import generate
 
 
 class TestGenerate:
-    def test_no_key_returns_message(self):
+    def test_no_key_raises_exception(self):
+        import pytest
+        from fastapi import HTTPException
         with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", ""):
-            result = generate("openrouter", "test", {})
-            assert "API key not configured" in result
-            assert "OPENROUTER_API_KEY" in result
+            with pytest.raises(HTTPException) as exc:
+                generate("openrouter", "test", {})
+            assert exc.value.status_code == 503
+            assert "API key" in exc.value.detail
 
     def test_calls_openrouter_endpoint(self):
         with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
@@ -24,14 +27,18 @@ class TestGenerate:
                 mock_client.chat.completions.create.assert_called_once()
 
     def test_handles_api_error(self):
+        import pytest
+        from fastapi import HTTPException
         with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):
             with patch("app.services.ai_service.OpenAI") as mock_openai:
                 mock_client = MagicMock()
                 mock_openai.return_value = mock_client
                 mock_client.chat.completions.create.side_effect = Exception("API error")
 
-                result = generate("openrouter", "test", {})
-                assert "OpenRouter error" in result
+                with pytest.raises(HTTPException) as exc:
+                    generate("openrouter", "test", {})
+                assert exc.value.status_code == 502
+                assert "API error" in exc.value.detail
 
     def test_ignores_unrecognized_provider(self):
         with patch("app.services.ai_service.settings.OPENROUTER_API_KEY", "sk-test-key"):

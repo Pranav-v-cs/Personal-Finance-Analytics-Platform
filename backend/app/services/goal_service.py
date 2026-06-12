@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -5,6 +6,8 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.models import Goal
+
+logger = logging.getLogger(__name__)
 
 
 def get_user_goals(db: Session, user_id: int) -> list[dict]:
@@ -34,7 +37,11 @@ def get_user_goal_or_404(db: Session, user_id: int, goal_id: int) -> Goal:
         .first()
     )
     if not goal:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Goal not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Goal with ID {goal_id} was not found. "
+                   "It may have been deleted or you may not have access to it.",
+        )
     return goal
 
 
@@ -51,7 +58,10 @@ def create_user_goal(
         try:
             parsed_date = datetime.strptime(target_date, "%Y-%m-%d").date()
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date format: '{target_date}'. Please use YYYY-MM-DD format (e.g., 2025-12-31).",
+            )
 
     goal = Goal(
         user_id=user_id,
@@ -61,7 +71,15 @@ def create_user_goal(
         target_date=parsed_date,
     )
     db.add(goal)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to create goal for user %d: %s", user_id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to save the financial goal due to a database error. Please try again.",
+        )
     db.refresh(goal)
     return goal
 
@@ -81,12 +99,31 @@ def update_user_goal(
         try:
             goal.target_date = datetime.strptime(target_date, "%Y-%m-%d").date()
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD.")
-    db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid date format: '{target_date}'. Please use YYYY-MM-DD format (e.g., 2025-12-31).",
+            )
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to update goal %d: %s", goal.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to update the financial goal due to a database error. Please try again.",
+        )
     db.refresh(goal)
     return goal
 
 
 def delete_user_goal(db: Session, goal: Goal) -> None:
     db.delete(goal)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error("Failed to delete goal %d: %s", goal.id, e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete the financial goal due to a database error. Please try again.",
+        )
