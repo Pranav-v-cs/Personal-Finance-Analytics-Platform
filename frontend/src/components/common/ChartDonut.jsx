@@ -20,7 +20,7 @@ const ChartDonut = memo(function ChartDonut({ data, innerRadius = 75 }) {
 
   return (
     <div className="min-w-0 w-full" style={{ height: 280 }}>
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
         <PieChart>
           <Pie
             data={data}
