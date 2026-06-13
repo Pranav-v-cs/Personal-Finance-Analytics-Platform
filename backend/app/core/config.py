@@ -11,8 +11,7 @@ class Settings(BaseSettings):
 
     OPENROUTER_API_KEY: str = ""
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
-    OPENROUTER_MODEL: str = "google/gemini-2.0-flash-001"
-    OPENROUTER_FREE_MODEL: bool = True
+    OPENROUTER_MODEL: str = "google/gemini-2.5-flash-lite"
 
 
 settings = Settings()
