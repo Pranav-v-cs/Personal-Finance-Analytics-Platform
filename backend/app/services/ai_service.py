@@ -21,6 +21,10 @@ def generate(_provider: str, prompt: str, context: dict) -> str:
     try:
         response = client.chat.completions.create(
             model=settings.OPENROUTER_MODEL,
+            extra_headers={
+                "HTTP-Referer": "https://finlytics-pranav-v.vercel.app",
+                "X-Title": "Finlytics",
+            },
             messages=[
                 {
                     "role": "system",
