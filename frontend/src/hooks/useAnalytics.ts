@@ -129,9 +129,10 @@ function computeCategoryTrends(
       trends[cat] = { direction: 'down', change: -100, current: 0 }
     } else {
       const change = ((curr - prev) / prev) * 100
+      const rounded = Math.round(change)
       trends[cat] = {
-        direction: change > 0 ? 'up' : change < 0 ? 'down' : 'flat',
-        change: Math.round(change),
+        direction: rounded > 0 ? 'up' : rounded < 0 ? 'down' : 'flat',
+        change: rounded,
         current: curr,
       }
     }
@@ -190,11 +191,11 @@ function computeCategoryInsights(
   const insights: string[] = []
   const top = categories[0]
   if (top) {
-    insights.push(`${top.category} remains your dominant category at ${top.percent}% of total spending.`)
+    insights.push(`${top.category} remains your dominant category at ${Math.round(Number(top.percent))}% of total spending.`)
   }
   if (categories.length > 1) {
     const bottom = categories[categories.length - 1]
-    insights.push(`${bottom.category} accounts for only ${bottom.percent}% — your smallest spending area.`)
+    insights.push(`${bottom.category} accounts for only ${Math.round(Number(bottom.percent))}% — your smallest spending area.`)
   }
 
   const rising = Object.entries(categoryTrends || {})

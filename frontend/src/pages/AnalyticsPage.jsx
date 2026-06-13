@@ -238,11 +238,11 @@ export default function AnalyticsPage() {
                       {cat.category}
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {trend && trend.direction !== 'flat' && (
-                        <span className={`text-xs category-trend-${trend.direction}`}>
-                          {trend.direction === 'up' ? '▲' : trend.direction === 'down' ? '▼' : '◆'} {Math.abs(trend.change)}%
-                        </span>
-                      )}
+          {trend && trend.direction !== 'flat' && trend.change > 0 && (
+            <span className={`text-xs category-trend-${trend.direction}`}>
+              {trend.direction === 'up' ? '▲' : trend.direction === 'down' ? '▼' : '◆'} {Math.abs(trend.change)}%
+            </span>
+          )}
                       <span className="font-semibold font-mono tabular-nums">{formatCurrency(cat.total)}</span>
                     </div>
                   </div>

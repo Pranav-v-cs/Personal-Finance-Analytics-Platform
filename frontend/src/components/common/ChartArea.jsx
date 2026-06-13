@@ -1,11 +1,11 @@
 import { memo } from 'react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts'
+import { AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer } from 'recharts'
 import { formatCurrency, currencyTickFormatter } from '../../utils/format'
 
 function AreaTooltip({ active, payload, label, currency }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-[var(--border)] bg-[var(--bg)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surfaceStrong)] px-3 py-2 shadow-[0_4px_12px_var(--shadow)] text-xs">
       <div className="font-semibold mb-1">{label}</div>
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2" style={{ color: entry.color }}>
@@ -21,23 +21,21 @@ const ChartArea = memo(function ChartArea({ data, dataKey = 'total', name = 'Spe
   if (!data?.length) return null
 
   return (
-    <div style={{ height }}>
-      <ResponsiveContainer width="100%" height={height}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-          <defs>
-            <linearGradient id={`areaFill_${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity={0.3} />
-              <stop offset="100%" stopColor={color} stopOpacity={0.02} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={currencyTickFormatter(currency)} width={50} />
-          <Tooltip content={<AreaTooltip currency={currency} />} />
-          <Area type="monotone" dataKey={dataKey} name={name} stroke={color} strokeWidth={2} fill={`url(#areaFill_${dataKey})`} dot={false} activeDot={{ r: 4, fill: color }} />
-        </AreaChart>
-      </ResponsiveContainer>
-    </div>
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id={`areaFill_${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+        <XAxis dataKey="label" tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" interval="preserveStartEnd" />
+        <YAxis tick={{ fontSize: 11 }} stroke="rgba(255,255,255,0.2)" tickFormatter={currencyTickFormatter(currency)} width={50} />
+        <Tooltip content={<AreaTooltip currency={currency} />} />
+        <Area type="monotone" dataKey={dataKey} name={name} stroke={color} strokeWidth={2} fill={`url(#areaFill_${dataKey})`} dot={false} activeDot={{ r: 4, fill: color }} />
+      </AreaChart>
+    </ResponsiveContainer>
   )
 })
 

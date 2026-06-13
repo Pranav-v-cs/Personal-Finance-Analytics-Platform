@@ -47,7 +47,7 @@ def get_dashboard_summary(db: Session, user_id: int) -> dict:
         top_category = {
             "category": top_row[0],
             "total": top_total,
-            "percent": top_percent,
+            "percent": round(top_percent, 2),
         }
 
     return {
@@ -104,7 +104,7 @@ def get_dashboard_categories(db: Session, user_id: int) -> list[dict]:
         {
             "category": cat,
             "total": total,
-            "percent": (total / total_expenses * 100) if total_expenses else 0,
+            "percent": round((total / total_expenses * 100), 2) if total_expenses else 0,
         }
         for cat, total in category_rows
     ]
