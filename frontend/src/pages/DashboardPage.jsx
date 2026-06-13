@@ -10,7 +10,7 @@ import { Card } from '../components/ui/Card'
 import { PageContainer } from '../components/layout/PageContainer'
 import { formatCurrency } from '../utils/format'
 import { useDashboard } from '../hooks/useDashboard'
-import { useFinancialHealth } from '../hooks/useFinancialHealth'
+
 import { useInsights } from '../hooks/useInsights'
 import { useSpendingMetrics } from '../hooks/useSpendingMetrics'
 import { useRouter } from '../hooks/useRouter'
@@ -19,7 +19,6 @@ import { WIDGET_DEFS } from '../config/widgets'
 import { DashboardWidget, WidgetSkeleton } from '../components/dashboard/DashboardWidget'
 import { CustomizeDrawer } from '../components/dashboard/CustomizeDrawer'
 import {
-  WidgetFinancialHealth,
   WidgetInsights,
   WidgetMetrics,
   WidgetTrend,
@@ -30,7 +29,6 @@ import {
 } from '../components/dashboard/widgets'
 
 const WIDGET_COMPONENTS = {
-  'financial-health': WidgetFinancialHealth,
   insights: WidgetInsights,
   metrics: WidgetMetrics,
   trend: WidgetTrend,
@@ -41,7 +39,6 @@ const WIDGET_COMPONENTS = {
 }
 
 const WIDGET_PROPS_MAP = {
-  'financial-health': (ctx) => ({ health: ctx.health }),
   insights: (ctx) => ({ insights: ctx.insights }),
   metrics: (ctx) => ({ metrics: ctx.metrics, formatCurrency: ctx.formatCurrency }),
   trend: (ctx) => ({ monthSeries: ctx.monthSeries, formatCurrency: ctx.formatCurrency, trendNarrative: ctx.trendNarrative, DeltaBadge, metrics: ctx.metrics }),
@@ -92,7 +89,6 @@ export default function DashboardPage() {
   const { navigate } = useRouter()
   const insights = useInsights({ summary, monthly, recent, categories, budgets })
   const metrics = useSpendingMetrics({ summary, monthly, recent })
-  const health = useFinancialHealth({ summary, monthly, budgets, goals })
   const layout = useDashboardLayout()
   const [drawerOpen, setDrawerOpen] = useState(false)
 
@@ -115,9 +111,9 @@ export default function DashboardPage() {
   }, [monthly])
 
   const sharedProps = useMemo(() => ({
-    insights, metrics, health, monthSeries: monthly, trendNarrative,
+    insights, metrics, monthSeries: monthly, trendNarrative,
     categories, budgets, goals, navigate, formatCurrency,
-  }), [insights, metrics, health, monthly, trendNarrative, categories, budgets, goals, navigate])
+  }), [insights, metrics, monthly, trendNarrative, categories, budgets, goals, navigate])
 
   if (loading) {
     return (
@@ -145,7 +141,7 @@ export default function DashboardPage() {
         <PageHeader
           eyebrow="Dashboard"
           title="Your financial snapshot"
-          description="Your financial health, key metrics, and spending trends."
+          description="Key metrics, insights, and spending trends."
           actions={
             <>
               <Button variant="ghost" onClick={() => setDrawerOpen(true)}>Customize</Button>
@@ -158,7 +154,7 @@ export default function DashboardPage() {
           <Card>
             <EmptyState
               title="Add your first expense to see your financial overview."
-              description="Once you capture a few transactions, your health score, trends, and category mix will populate here."
+              description="Once you capture a few transactions, your trends, insights, and category mix will populate here."
               actionLabel="Add a transaction"
               onAction={() => navigate('/expenses')}
             />

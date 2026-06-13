@@ -79,7 +79,6 @@ frontend/
 - **Expense tracking** — categorize and filter transactions
 - **Budgets** — set limits per category and track progress
 - **Goals** — save toward financial targets
-- **Financial Health** — score based on spending, budgets, and goals
 - **AI Assistant** — ask questions about your finances in natural language
 - **Analytics** — trend charts, category breakdowns, anomaly detection
 - **Responsive** — works on desktop, tablet, and mobile

@@ -343,7 +343,7 @@ export default function BudgetsPage() {
         {editing && <Card><CardHeader><CardTitle>Edit budget</CardTitle></CardHeader><CardContent><BudgetForm categories={[editing.category]} onSubmit={handleUpdate} onCancel={() => setEditing(null)} initial={editing} /></CardContent></Card>}
 
         {budgets.length === 0 && !showForm ? (
-          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Create a budget to start tracking spending targets and improve your Financial Health score.</p></CardContent></Card>
+          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Create a budget to start tracking spending targets.</p></CardContent></Card>
         ) : (
           <>
             <Card><CardContent className="grid grid-cols-3 gap-4">
@@ -375,7 +375,7 @@ export default function BudgetsPage() {
         {fundingGoal && <Card><CardHeader><CardTitle>Add funds</CardTitle></CardHeader><CardContent><AddFundsForm goal={fundingGoal} onSubmit={handleGoalAddFunds} onCancel={() => setFundingGoal(null)} /></CardContent></Card>}
 
         {goals.length === 0 && !showGoalForm ? (
-          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Set a savings goal to improve your Financial Health score and track progress toward your financial targets.</p></CardContent></Card>
+          <Card><CardContent><p className="text-sm text-[var(--muted)] text-center py-8">Set a savings goal to track progress toward your financial targets.</p></CardContent></Card>
         ) : (
           <>
             {activeGoals.active.length > 0 && <><div><h3 className="text-base font-extrabold tracking-tight">Active goals</h3></div><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{activeGoals.active.map((goal) => <GoalCard key={goal.id} goal={goal} onEdit={setEditingGoal} onDelete={handleGoalDelete} onAddFunds={setFundingGoal} />)}</div></>}

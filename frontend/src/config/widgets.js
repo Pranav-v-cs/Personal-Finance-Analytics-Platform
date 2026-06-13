@@ -1,17 +1,6 @@
 export const SIZES = ['small', 'medium', 'large']
 
 export const WIDGET_DEFS = {
-  'financial-health': {
-    id: 'financial-health',
-    title: 'Financial Health',
-    subtitle: 'Wellness score',
-    defaultOrder: 0,
-    alwaysVisible: true,
-    group: 'core',
-    zone: 'hero',
-    defaultSize: 'large',
-    sizes: ['large'],
-  },
   insights: {
     id: 'insights',
     title: 'Insights',
@@ -98,7 +87,7 @@ export const PRESETS = {
     label: 'Default',
     description: 'Balanced overview',
     zones: {
-      hero: ['financial-health', 'budget-summary', 'goal-progress'],
+      hero: ['budget-summary', 'goal-progress'],
       insights: ['insights'],
       analytics: ['metrics', 'trend', 'category-intelligence'],
       utility: ['ai-assistant'],
@@ -109,7 +98,7 @@ export const PRESETS = {
     label: 'Analytics Focus',
     description: 'Prioritize forecasting and trends',
     zones: {
-      hero: ['financial-health', 'insights'],
+      hero: ['insights'],
       insights: [],
       analytics: ['metrics', 'trend', 'category-intelligence'],
       utility: ['ai-assistant'],
@@ -120,7 +109,7 @@ export const PRESETS = {
     label: 'Budget Focus',
     description: 'Track budgets and goals',
     zones: {
-      hero: ['financial-health', 'budget-summary', 'goal-progress'],
+      hero: ['budget-summary', 'goal-progress'],
       insights: ['insights'],
       analytics: ['metrics'],
       utility: ['ai-assistant'],
@@ -131,7 +120,7 @@ export const PRESETS = {
     label: 'Goal Focus',
     description: 'Focus on financial targets',
     zones: {
-      hero: ['financial-health', 'goal-progress'],
+      hero: ['goal-progress'],
       insights: ['insights'],
       analytics: ['metrics'],
       utility: [],
@@ -140,9 +129,9 @@ export const PRESETS = {
   },
   minimal: {
     label: 'Minimal',
-    description: 'Only health and top insights',
+    description: 'Only essentials',
     zones: {
-      hero: ['financial-health'],
+      hero: ['insights'],
       insights: ['insights'],
       analytics: [],
       utility: [],

@@ -8,7 +8,6 @@ import { InlineError } from '../components/common/InlineError'
 import { PageContainer } from '../components/layout/PageContainer'
 import { SkeletonLine } from '../components/ui/Skeleton'
 import { useDashboard } from '../hooks/useDashboard'
-import { useFinancialHealth } from '../hooks/useFinancialHealth'
 import { useSpendingMetrics } from '../hooks/useSpendingMetrics'
 import { useInsights } from '../hooks/useInsights'
 import { useAIAssistant } from '../hooks/useAIAssistant'
@@ -65,12 +64,6 @@ function SuggestedQuestions({ onSelect, disabled }) {
 export default function AIAssistantPage() {
   const dashboard = useDashboard()
   const analyticsData = useAnalytics()
-  const health = useFinancialHealth({
-    summary: dashboard.summary,
-    monthly: dashboard.monthly,
-    budgets: dashboard.budgets,
-    goals: dashboard.goals,
-  })
   const metrics = useSpendingMetrics({
     summary: dashboard.summary,
     monthly: dashboard.monthly,
@@ -94,10 +87,9 @@ export default function AIAssistantPage() {
     categoryTrends: analyticsData.categoryTrends,
     categoryInsights: analyticsData.categoryInsights,
     anomalyInsights: analyticsData.anomalyInsights,
-    health,
     insights,
     metrics,
-  }), [dashboard, analyticsData, health, insights, metrics])
+  }), [dashboard, analyticsData, insights, metrics])
 
   const { messages, loading, error, sendMessage, clearHistory } = useAIAssistant(data)
   const [input, setInput] = useState('')
@@ -152,7 +144,7 @@ export default function AIAssistantPage() {
         <PageHeader
           eyebrow="AI Assistant"
           title="Your financial analyst"
-          description="Ask questions about your spending, budgets, goals, and financial health. Responses are grounded in your actual data."
+          description="Ask questions about your spending, budgets, and goals. Responses are grounded in your actual data."
           actions={
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="sm" onClick={() => { if (messages[messages.length-1]?.role !== 'user') sendMessage('Generate a financial report with executive summary, budget analysis, goal analysis, forecast analysis, savings opportunities, and recommendations.') }} disabled={loading}>

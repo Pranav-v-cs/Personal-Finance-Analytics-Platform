@@ -9,7 +9,6 @@ export function buildFinancialContext({
   categoryTrends,
   categoryInsights,
   anomalyInsights,
-  health,
 }) {
   const context = {}
 
@@ -98,15 +97,6 @@ export function buildFinancialContext({
 
   if (categoryInsights && categoryInsights.length > 0) {
     context.insights = categoryInsights
-  }
-
-  if (health) {
-    context.healthScore = {
-      score: health.score,
-      label: health.label,
-      change: health.scoreChange,
-      recommendation: health.recommendation,
-    }
   }
 
   if (analytics) {

@@ -2,7 +2,6 @@ export const SUGGESTED_QUESTIONS = [
   'Where did I overspend?',
   'Which budget is at risk?',
   'How can I save money?',
-  'Why did my health score decrease?',
   'Compare this month with last month.',
   'Explain my spending trends.',
 ]

@@ -7,12 +7,6 @@ export async function generateExplainBudget(budget, data) {
   return generateAIResponse(prompt, context)
 }
 
-export async function generateExplainHealth(health, data) {
-  const context = buildFinancialContext(data)
-  const prompt = `The user's Financial Health score is ${health.score} (${health.label}). ${health.recommendation} Briefly explain what this means and suggest 1-2 specific actions to improve it.`
-  return generateAIResponse(prompt, context)
-}
-
 export async function generateExplainForecast(forecast, data) {
   const context = buildFinancialContext(data)
   const prompt = `The spending forecast projects ${forecast.projected} for this month (${forecast.confidence} confidence). Daily rate is ${forecast.dailyRate} with ${forecast.daysRemaining} days remaining. ${forecast.vsLastMonth > 0 ? `This would exceed last month by ${forecast.vsLastMonth}%.` : forecast.vsLastMonth < 0 ? `This would be ${Math.abs(forecast.vsLastMonth)}% less than last month.` : 'This matches last month.'} Explain what this means and suggest one action.`

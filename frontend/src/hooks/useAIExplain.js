@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import {
   generateExplainBudget,
-  generateExplainHealth,
   generateExplainForecast,
   generateExplainAnomaly,
 } from '../services/ai/aiInsights'
@@ -17,20 +16,6 @@ export function useAIExplain(data) {
     setExplanation('')
     try {
       const result = await generateExplainBudget(budget, data)
-      setExplanation(result)
-    } catch (err) {
-      setExplainError(err.message || 'Failed to generate explanation')
-    } finally {
-      setExplaining(false)
-    }
-  }, [data])
-
-  const explainHealth = useCallback(async (health) => {
-    setExplaining(true)
-    setExplainError('')
-    setExplanation('')
-    try {
-      const result = await generateExplainHealth(health, data)
       setExplanation(result)
     } catch (err) {
       setExplainError(err.message || 'Failed to generate explanation')
@@ -77,7 +62,6 @@ export function useAIExplain(data) {
     explaining,
     explainError,
     explainBudget,
-    explainHealth,
     explainForecast,
     explainAnomaly,
     clearExplanation,

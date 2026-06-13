@@ -5,7 +5,7 @@ export async function generateFinancialReport(data) {
   const context = buildFinancialContext(data)
   const prompt = `Generate a concise executive financial report based on the data provided. Include the following sections:
 
-1. Executive Summary — 2-3 sentence overview of financial health
+1. Executive Summary — 2-3 sentence overview of spending and trends
 2. Budget Analysis — which budgets are on track, at risk, or over; current utilization
 3. Goal Analysis — progress on savings goals
 4. Forecast Analysis — projected month-end spend and confidence
