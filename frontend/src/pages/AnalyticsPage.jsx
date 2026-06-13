@@ -281,12 +281,12 @@ export default function AnalyticsPage() {
             {(analytics?.largest_transactions || []).length > 0 ? (
               <div className="flex flex-col gap-2">
                 {analytics.largest_transactions.map((txn) => (
-                  <div key={txn.id} className="flex items-center justify-between text-sm">
-                    <div>
-                      <strong>{txn.title}</strong>
-                      <span>{txn.category} · {formatDate(txn.date)}</span>
+                  <div key={txn.id} className="flex items-center justify-between gap-2 text-sm">
+                    <div className="flex flex-col min-w-0">
+                      <strong className="truncate">{txn.title}</strong>
+                      <span className="text-[var(--muted)]">{txn.category} · {formatDate(txn.date)}</span>
                     </div>
-                    <strong>{formatCurrency(txn.amount)}</strong>
+                    <strong className="flex-shrink-0">{formatCurrency(txn.amount)}</strong>
                   </div>
                 ))}
               </div>

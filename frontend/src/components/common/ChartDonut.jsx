@@ -19,7 +19,7 @@ const ChartDonut = memo(function ChartDonut({ data, innerRadius = 75 }) {
   if (!data?.length) return null
 
   return (
-    <div className="flex items-center justify-center" style={{ height: 280 }}>
+    <div className="min-w-0 w-full" style={{ height: 280 }}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
